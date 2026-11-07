@@ -1,0 +1,2534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大学生活模拟器 · Demo</title>
+<style>
+  :root{
+    --bg:#1B1B2F;
+    --panel:#2A2A40;
+    --line:#4A4A6A;
+    --text:#E8E8F0;
+    --dim:#8A8AA0;
+    --gold:#F2C14E;
+    --stam:#4ADE80;
+    --hp:#F45B69;
+    --san:#60A5FA;
+    --game:#C084FC;
+    --danger:#FF3B3B;
+    --dark:#151525;
+  }
+  *{box-sizing:border-box;border-radius:0!important;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Zpix","微软雅黑","Microsoft YaHei",monospace;
+    font-size:14px;
+    letter-spacing:1px;
+    -webkit-font-smoothing:none;
+    font-smooth:never;
+    image-rendering:pixelated;
+    line-height:1.6;
+  }
+  #app{max-width:960px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;}
+  /* ---------- 顶部状态条 ---------- */
+  #topbar{
+    border:2px solid var(--line);
+    border-top:none;
+    background:var(--panel);
+    padding:8px 12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    min-height:80px;
+  }
+  .brand{color:var(--gold);font-size:16px;line-height:1.2;}
+  .brand .ver{display:block;color:var(--dim);font-size:10px;letter-spacing:2px;}
+  .clock{font-size:16px;color:var(--text);}
+  .clock .wnum{color:var(--gold);}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;}
+  .stat{min-width:132px;}
+  .stat .head{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--dim);}
+  .stat .head b{font-size:18px;font-weight:normal;color:var(--text);}
+  .bar{display:flex;gap:1px;border:2px solid var(--line);background:var(--dark);padding:2px;height:16px;margin-top:2px;}
+  .bar i{flex:1;background:#33334A;}
+  .bar i.on.stam{background:var(--stam);}
+  .bar i.on.hp{background:var(--hp);}
+  .bar i.on.san{background:var(--san);}
+  .bar i.on.game{background:var(--game);}
+  .bar i.on.money{background:var(--gold);}
+  .bar.danger{border-color:var(--danger);animation:blink 1s steps(2,start) infinite;}
+  @keyframes blink{50%{opacity:.35;}}
+  /* ---------- 主区 ---------- */
+  main{display:grid;grid-template-columns:224px 1fr;gap:10px;padding:10px;flex:1;align-items:start;}
+  #sidebar{display:flex;flex-direction:column;gap:10px;}
+  #center{min-height:440px;}
+  .panel{
+    background:var(--panel);
+    border:2px solid var(--line);
+    padding:12px;
+  }
+  .panel h2{
+    font-size:16px;font-weight:normal;color:var(--gold);
+    margin-bottom:10px;padding-bottom:6px;
+    border-bottom:2px solid var(--line);
+  }
+  .panel h3{font-size:14px;font-weight:normal;color:var(--text);margin:10px 0 6px;}
+  .dim{color:var(--dim);}
+  .gold{color:var(--gold);}
+  .red{color:var(--hp);}
+  .blue{color:var(--san);}
+  .green{color:var(--stam);}
+  .course-row{margin-bottom:9px;}
+  .course-row .name{display:flex;justify-content:space-between;font-size:12px;}
+  .course-row .name span:last-child{color:var(--gold);}
+  .mini-bar{display:flex;gap:1px;border:2px solid var(--line);background:var(--dark);padding:1px;height:12px;margin-top:3px;}
+  .mini-bar i{flex:1;background:#33334A;}
+  .mini-bar i.on{background:var(--gold);}
+  .side-info{border-top:2px solid var(--line);margin-top:8px;padding-top:8px;font-size:12px;line-height:1.9;}
+  .side-info b{color:var(--gold);font-weight:normal;}
+  /* ---------- 按钮 ---------- */
+  .btn{
+    display:inline-block;
+    background:var(--panel);
+    border:2px solid var(--line);
+    color:var(--text);
+    font-family:inherit;
+    font-size:14px;
+    letter-spacing:1px;
+    padding:7px 14px;
+    cursor:pointer;
+    box-shadow:3px 3px 0 #000;
+    margin:3px 4px 3px 0;
+  }
+  .btn:hover{border-color:var(--gold);color:var(--gold);}
+  .btn:active{transform:translate(3px,3px);box-shadow:none;}
+  .btn.gold{border-color:var(--gold);color:var(--gold);}
+  .btn.big{font-size:16px;padding:10px 22px;}
+  .btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;}
+  .btn:disabled:hover{border-color:var(--line);color:var(--text);}
+  .btn.small{font-size:12px;padding:4px 8px;}
+  .btn.stack{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;text-align:left;}
+  .btn.stack .eff{font-size:11px;color:var(--dim);letter-spacing:0;line-height:1.5;}
+  /* ---------- 标题页 ---------- */
+  .title-screen{padding:40px 20px;text-align:center;}
+  .title-screen .logo{
+    font-size:32px;color:var(--gold);letter-spacing:6px;
+    text-shadow:4px 4px 0 #000;margin-bottom:6px;
+  }
+  .title-screen .sub{color:var(--dim);font-size:12px;letter-spacing:2px;margin-bottom:26px;}
+  .title-screen .menu{display:flex;flex-direction:column;gap:10px;align-items:center;}
+  .title-screen .record{
+    margin-top:26px;border-top:2px solid var(--line);padding-top:14px;
+    color:var(--dim);font-size:12px;line-height:2;
+  }
+  /* ---------- 课表 ---------- */
+  .schedule-table{width:100%;border-collapse:collapse;margin-top:8px;}
+  .schedule-table th,.schedule-table td{border:2px solid var(--line);padding:2px;text-align:center;}
+  .schedule-table th{background:var(--dark);color:var(--dim);font-size:12px;font-weight:normal;height:26px;}
+  .schedule-table td.time{background:var(--dark);color:var(--dim);font-size:12px;width:58px;}
+  .cell{
+    width:100%;height:34px;background:transparent;border:none;
+    color:var(--text);font-family:inherit;font-size:12px;letter-spacing:1px;cursor:pointer;
+  }
+  .cell:hover{background:#3A3A55;color:var(--gold);}
+  .cell.filled{background:var(--dark);color:var(--gold);}
+  .validate{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;margin-top:10px;color:var(--dim);}
+  .validate .ok{color:var(--stam);}
+  .validate .bad{color:var(--hp);}
+  .hint{font-size:12px;color:var(--dim);margin-top:6px;line-height:1.8;}
+  /* ---------- 日面板 ---------- */
+  .day-list{border:2px solid var(--line);}
+  .day-slot{display:flex;border-bottom:2px solid var(--line);font-size:13px;min-height:36px;align-items:center;}
+  .day-slot:last-child{border-bottom:none;}
+  .day-slot .t{width:64px;color:var(--dim);font-size:12px;text-align:center;border-right:2px solid var(--line);align-self:stretch;display:flex;align-items:center;justify-content:center;}
+  .day-slot .c{flex:1;padding:0 10px;}
+  .day-slot .c.free{color:var(--dim);}
+  .day-slot .tag{font-size:10px;color:var(--dim);}
+  .action-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .action-row .btn{margin:0;flex:0 0 auto;}
+  /* ---------- 日志 ---------- */
+  #logbar{
+    border:2px solid var(--line);border-bottom:none;background:var(--panel);
+    padding:6px 10px;min-height:84px;margin-top:0;
+  }
+  #logbar .logtitle{font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:2px;}
+  #loglist{font-size:12px;color:var(--text);}
+  #loglist div{line-height:1.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #loglist .dim{color:var(--dim);}
+  body.title-mode #sidebar,body.title-mode #logbar{display:none;}
+  body.title-mode main{grid-template-columns:1fr;}
+  /* ---------- 响应式 ---------- */
+  @media (max-width:720px){
+    #topbar{flex-wrap:wrap;}
+    .stats{flex:1 1 100%;}
+    main{display:flex;flex-direction:column;}
+    #center{order:-1;min-width:0;}
+    #sidebar{flex-direction:row;flex-wrap:wrap;}
+    #sidebar .panel{flex:1 1 100%;}
+    .stat{min-width:104px;}
+    .title-screen .logo{font-size:24px;letter-spacing:3px;}
+  }
+  @media (max-width:480px){
+    html,body{height:auto;min-height:100%;}
+    body{overflow-x:hidden;}
+    #topbar{padding:6px 8px;gap:6px;min-height:64px;}
+    .brand{font-size:14px;}
+    .brand .ver{font-size:9px;letter-spacing:1px;}
+    .clock{font-size:14px;}
+    .stats{gap:6px;width:100%;}
+    .stat{flex:1 1 calc(50% - 3px);min-width:0;}
+    .stat .head b{font-size:16px;}
+    main{padding:6px;gap:8px;}
+    .panel{padding:8px;}
+    .panel h2{font-size:15px;}
+    .action-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:8px;}
+    .action-row .btn{width:100%;margin:0;}
+    .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:8px 10px;
+      font-size:13px;white-space:normal;word-break:break-word;line-height:1.45;}
+    .btn.small{min-height:44px;font-size:12px;padding:8px;letter-spacing:0;}
+    .btn.stack{padding:8px 10px;}
+    .btn.stack .eff{font-size:12px;line-height:1.5;}
+    .action-row[style*="column"]{grid-template-columns:1fr;}
+    .action-row[style*="column"] .btn{justify-content:flex-start;text-align:left;}
+    .night-block{flex-wrap:wrap;align-items:stretch;}
+    .night-block .c,.night-block .action-row{flex:1 1 100%;}
+    .day-slot{min-height:44px;}
+    .day-slot .c{padding:6px 10px;white-space:normal;word-break:break-word;}
+    .day-slot .t{width:52px;}
+    #loglist div{white-space:normal;overflow:visible;text-overflow:clip;}
+    .schedule-table th,.schedule-table td{padding:1px;}
+    .schedule-table td.time{width:40px;font-size:11px;}
+    .cell{font-size:11px;height:38px;letter-spacing:0;}
+    .validate{gap:8px;line-height:1.6;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="brand">大学生活模拟器<span class="ver">DEMO v0.1 · 像素生存</span></div>
+    <div id="clock" class="clock">未开始</div>
+    <div id="stats" class="stats"></div>
+  </header>
+  <main>
+    <aside id="sidebar"></aside>
+    <section id="center"></section>
+  </main>
+  <footer id="logbar">
+    <div class="logtitle">▼ 日志</div>
+    <div id="loglist"></div>
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   大学生活模拟器 Demo
+   单文件 / 原生 JS / 无外部依赖
+   数据依据：大学生活模拟器-项目说明.md
+   ============================================================ */
+
+/* ========= 常量 ========= */
+const SAVE_KEY = 'dslr_save_v1';
+const RECORD_KEY = 'dslr_record_v1';
+
+const COURSE_DEFS = {
+  java:     { name: 'Java',         short: 'Java',    type: 'major',  weeklySlots: 3 },
+  web:      { name: '前端开发',      short: '前端',    type: 'major',  weeklySlots: 3 },
+  db:       { name: '数据库',        short: '数据库',  type: 'major',  weeklySlots: 2 },
+  android:  { name: 'Android 开发',  short: 'Android', type: 'major',  weeklySlots: 2 },
+  politics: { name: '政治',          short: '政治',    type: 'public', weeklySlots: 1 },
+  startup:  { name: '大学生创业指导', short: '创业',    type: 'public', weeklySlots: 1 },
+  pe:       { name: '体育',          short: '体育',    type: 'public', weeklySlots: 1 }
+};
+const MAJOR_IDS = ['java', 'web', 'db', 'android'];
+const PUBLIC_IDS = ['politics', 'startup', 'pe'];
+const ALL_IDS = Object.keys(COURSE_DEFS);
+const SLOT_TIMES = ['08:00', '10:00', '14:00', '16:00', '19:00'];
+const DAY_NAMES = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+const MEAL_DEFS = [
+  { id: 'breakfast', name: '早餐', price: 10 },
+  { id: 'lunch',     name: '午餐', price: 18 },
+  { id: 'dinner',    name: '晚餐', price: 18 }
+];
+const CYCLE_COURSES = [null, 'java', 'web', 'db', 'android', 'politics', 'startup', 'pe'];
+
+/* ========= 全局状态 ========= */
+let state = null;
+let record = { bestGrade: null, bestAvgScore: 0, bestRunCount: 0, clearedAt: 0, attempts: 0 };
+let ui = { phase: 'title', editGrid: null };
+
+/* ========= 工具 ========= */
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function $(id) { return document.getElementById(id); }
+function dayText(week, day) {
+  if (week === 10) return '补考周 · 第 ' + day + ' 天';
+  return '第 ' + week + ' 周 · ' + (DAY_NAMES[day] || ('第' + day + '天'));
+}
+
+/* ========= 带种子随机（mulberry32） ========= */
+let rngState = 1;
+function initRng(seed) { rngState = (seed >>> 0) || 1; }
+function random() {
+  rngState = (rngState + 0x6D2B79F5) >>> 0;
+  let t = rngState;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+/* ========= 事件池（依据文档 6.4，共 50 个） ========= */
+function EV(id, title, category, weight, condition, description, options) {
+  return { id: id, title: title, category: category, weight: weight, condition: condition || {}, description: description, options: options };
+}
+function OPT(text, effects, resultText, extra) {
+  const o = { text: text, effects: effects, resultText: resultText, chance: null, risky: false };
+  if (extra) Object.assign(o, extra);
+  return o;
+}
+function CH(p, failEffects, failText, replace) {
+  return { p: p, failEffects: failEffects, failText: failText, replace: !!replace };
+}
+function PR(course, delta) { return { prof: { course: course, delta: delta } }; }
+
+let EVENTS = [
+  /* ---- 6.4.1 日常与生活 ---- */
+  EV('E01', '宿舍断电', 'life', 70, {}, '晚上十一点，宿舍楼突然跳闸，一片漆黑，室友的键盘声戛然而止。', [
+    OPT('摸黑早睡', { stamina: 30, sanity: 5 }, '难得睡了个好觉。'),
+    OPT('用手机闪光灯继续复习', { stamina: -8, sanity: -3, prof: { course: 'choose', delta: 4 } }, '屏幕反光刺得眼睛疼，但笔记翻了半章。'),
+    OPT('出去找便利店买蜡烛', { money: -15, stamina: -2 }, '店员说蜡烛卖完了，给你一根荧光棒。')
+  ]),
+  EV('E02', '室友通宵开黑', 'life', 65, {}, '室友戴上耳机开始五排，音量开到最大，还喊你一起。', [
+    OPT('加入', { sanity: 12, stamina: -12, health: -8, gameProf: 5, night: 'late' }, '赢了三把，凌晨四点才睡。'),
+    OPT('戴耳塞硬睡', { stamina: 35, sanity: -3 }, '耳塞挡不住吼叫，但勉强睡了。'),
+    OPT('去楼道复习', { stamina: -10, sanity: -5, prof: { course: 'choose', delta: 5 } }, '楼道灯很暗，但总算安静。')
+  ]),
+  EV('E03', '食堂新开窗口', 'life', 60, {}, '三食堂新开了家麻辣香锅，排队排到楼梯口。', [
+    OPT('排队吃', { money: -25, health: 8, sanity: 3, stamina: -3 }, '辣得冒汗，心情莫名变好。'),
+    OPT('算了吃老窗口', { money: -12 }, '省了钱，也省了时间。'),
+    OPT('直接回宿舍泡面', { money: -5, health: -3 }, '泡面吃多了，胃有点烧。')
+  ]),
+  EV('E04', '快递堆成山', 'life', 55, {}, '驿站发来消息：您有 5 个包裹已滞留 3 天，请尽快取件。', [
+    OPT('现在去取', { stamina: -5, money: -10 }, '扛着五个箱子爬了四层楼。'),
+    OPT('花钱代取', { money: -25 }, '花钱买了个轻松。'),
+    OPT('先不管', { sanity: -4 }, '晚上躺床上突然想起还有个快递。')
+  ]),
+  EV('E05', '手机屏幕摔裂', 'life', 45, {}, '手机从床上掉下去，屏幕裂了一道闪电状的缝。', [
+    OPT('立刻去修', { money: -180, sanity: 5 }, '换了外屏，心在滴血但手不划了。'),
+    OPT('贴膜凑合用', { money: -20, sanity: -4 }, '膜遮住了裂缝，但触摸偶尔失灵。'),
+    OPT('咬牙不修', { sanity: -8, stamina: -2 }, '眯着眼用了一周，头痛。')
+  ]),
+  EV('E06', '班群 @ 全体成员', 'life', 60, { maxWeek: 9 }, '班长在群里连发三条：「今晚 8 点前必须填完这份表！」', [
+    OPT('立刻填', { stamina: -3, sanity: -2 }, '十分钟搞定，但打断了复习节奏。'),
+    OPT('拖到晚上', { sanity: -6, health: -3, night: 'late' }, '十一点半才想起来，摸黑填完。'),
+    OPT('装没看见', { sanity: -10 }, '第二天被班长单独私聊了。')
+  ]),
+  EV('E07', '奶茶店第二杯半价', 'life', 50, {}, '楼下奶茶店搞活动，第二杯半价，室友已经在群里 @ 你了。', [
+    OPT('拼单', { money: -18, sanity: 8, health: -3 }, '甜的东西确实让人快乐。'),
+    OPT('只买一杯', { money: -14, sanity: 3 }, '一个人喝有点孤单。'),
+    OPT('不喝', { sanity: -2 }, '看着他们喝，越想越渴。')
+  ]),
+  EV('E08', '感冒发烧', 'life', 40, { minWeek: 2, maxWeek: 9 }, '早上起来喉咙像刀割，额头烫得吓人，室友说你脸都红了。', [
+    OPT('去校医院', { money: -80, health: 20, stamina: -5, skipToday: true }, '挂了两瓶水，下午睡了一觉。'),
+    OPT('硬扛上课', { health: -18, stamina: -15, prof: { course: 'all_major', delta: -2 } }, '撑到第三节课眼前发黑。'),
+    OPT('宿舍躺一天', { health: -8, stamina: 25, skipToday: true }, '盖着被子睡了一整天。')
+  ]),
+  EV('E09', '钱包 / 校园卡丢失', 'life', 35, {}, '刷卡时提示「余额不足」，你翻遍口袋，校园卡不见了。', [
+    OPT('挂失补办', { money: -30, stamina: -6 }, '跑了两趟教务处，卡补回来了。'),
+    OPT('先借室友的', { sanity: -5 }, '蹭了三天饭，人情记账上。'),
+    OPT('群里发寻物启事', { sanity: -3 }, '居然真有人送到门卫室。', { chance: CH(0.5, { money: -30 }, '卡没找回来，只能补办。') })
+  ]),
+  EV('E10', '洗衣房排队', 'life', 55, {}, '周末洗衣房排了七八个人，你的脏衣服已经堆成小山。', [
+    OPT('排队等', { stamina: -6, sanity: -4, health: 3 }, '站了四十分钟，衣服终于洗上。'),
+    OPT('手洗', { stamina: -10, health: -2 }, '腰酸背痛，但省了六块钱。'),
+    OPT('再堆一周', { sanity: -5, health: -5 }, '已经分不清哪件是干净的了。')
+  ]),
+
+  /* ---- 6.4.2 课程耦合 ---- */
+  EV('E11', '数据库课点名', 'course', 75, { requiresCourseToday: 'db' }, '数据库老师突然开始点名，从第一排往后数，你的名字在倒数第三个。', [
+    OPT('大声答到并回答问题', { stamina: -3, sanity: -4, prof: { course: 'db', delta: 5 } }, '答对了，但手心全是汗。'),
+    OPT('小声答到', { sanity: -2, prof: { course: 'db', delta: 3 } }, '老师抬眼看了你一下，没说话。'),
+    OPT('低头装没听见', { sanity: -6, prof: { course: 'db', delta: -4 } }, '被记了缺勤，名单贴在教室门口。')
+  ]),
+  EV('E12', 'Java 实验报告 DDL', 'course', 70, { minWeek: 6, maxWeek: 8 }, '群里弹出通知：Java 实验报告今晚 24 点截止，还差最后两页。', [
+    OPT('通宵写完', { health: -15, stamina: -20, sanity: -10, prof: { course: 'java', delta: 8 }, night: 'allnight' }, '凌晨三点交上去了，眼睛睁不开。'),
+    OPT('抄同学的', { sanity: -8, prof: { course: 'java', delta: -4 } }, '改了两个变量名就交了，总怕被查重。'),
+    OPT('迟交扣分', { prof: { course: 'java', delta: -6 } }, '老师说迟交按 80% 计，只能认。')
+  ]),
+  EV('E13', '前端作业查重', 'course', 45, { minWeek: 4, maxWeek: 9 }, '前端老师说这次作业会跑查重系统，相似度超 30% 直接零分。', [
+    OPT('自己重写一遍', { stamina: -12, prof: { course: 'web', delta: 6 } }, '重写了三个小时，代码终于像自己的了。'),
+    OPT('改一改再交', { prof: { course: 'web', delta: 2 } }, '心惊胆战地交了。', { chance: CH(0.4, { sanity: -6, prof: { course: 'web', delta: -2 } }, '相似度超标，直接零分。') }),
+    OPT('找学长买模板', { money: -60, prof: { course: 'web', delta: 4 } }, '模板挺好看，就是有点眼熟。', { chance: CH(0.2, { sanity: -8, prof: { course: 'web', delta: -4 } }, '查重直接命中，作业作废。') })
+  ]),
+  EV('E14', 'Android 模拟器崩了', 'course', 50, { minWeek: 3, maxWeek: 9, requiresCourseToday: 'android' }, '你花了两小时配的环境，一跑模拟器就卡死，风扇声像起飞。', [
+    OPT('重装环境', { stamina: -10, sanity: -8, prof: { course: 'android', delta: 5 } }, '重装完终于跑起来了。'),
+    OPT('借同学电脑', { sanity: -3, prof: { course: 'android', delta: 3 } }, '蹭了别人的电脑，欠了顿奶茶。'),
+    OPT('放弃本节实践', { sanity: -2, prof: { course: 'android', delta: -4 } }, '这节课等于没上。')
+  ]),
+  EV('E15', '政治课小组汇报', 'course', 55, { minWeek: 2, maxWeek: 9, requiresCourseToday: 'politics' }, '政治课临时分组，你被推举为组长，明天要上台汇报。', [
+    OPT('熬夜做 PPT', { health: -8, stamina: -15, sanity: 6, night: 'late' }, '讲完了，掌声比想象中热烈。'),
+    OPT('分工给组员', { sanity: 4 }, '组员这次意外靠谱，你省了半条命。', { chance: CH(0.3, { sanity: -4 }, '组员交上来的内容一塌糊涂。', true) }),
+    OPT('现场裸讲', { sanity: -8, stamina: -3 }, '临场发挥，老师给了个及格分。')
+  ]),
+  EV('E16', '创业指导老师要路演', 'course', 40, { minWeek: 5, maxWeek: 9, requiresCourseToday: 'startup' }, '创业指导课要求每组做一个商业路演，下节课就上。', [
+    OPT('认真做方案', { stamina: -12, sanity: 10, money: -20 }, '方案被老师当成范例讲评。'),
+    OPT('网上下模板', { money: -10, sanity: -3 }, '模板痕迹太重，被点名批评。'),
+    OPT('上台即兴', { sanity: -6 }, '说了三分钟废话，组员脸色难看。')
+  ]),
+
+  /* ---- 6.4.3 社交、金钱与心理 ---- */
+  EV('E17', '兼职招聘传单', 'social', 50, { minWeek: 3, maxWeek: 9 }, '宿舍门上塞了张传单：奶茶店招兼职，50 元 / 2 小时（1 格）。', [
+    OPT('连做 3 格', { money: 150, stamina: -30, sanity: -12 }, '站了一天，脚底板发麻，但钱包鼓了。'),
+    OPT('只做 1 格试工', { money: 50, stamina: -10, sanity: -4 }, '试了一小时，店长说随时来。'),
+    OPT('扔掉', {}, '传单在垃圾桶里躺了两周。')
+  ]),
+  EV('E18', '室友生日聚会', 'social', 45, { minWeek: 3, maxWeek: 9 }, '室友过生日，全宿舍要去校门口撸串，AA。', [
+    OPT('去参加', { money: -60, sanity: 15, health: -5, stamina: -8 }, '吃撑了，笑到肚子疼。'),
+    OPT('只送礼物不去', { money: -40, sanity: 3 }, '礼物送到了，人没到。'),
+    OPT('不去也不送', { sanity: -10 }, '第二天宿舍气氛有点冷。')
+  ]),
+  EV('E19', '父母视频电话', 'social', 40, {}, '妈妈打来视频，背景是家里的客厅，她说你看起来瘦了。', [
+    OPT('认真聊半小时', { sanity: 12, stamina: -3 }, '聊完挂掉，突然有点想家。'),
+    OPT('说在忙，两句挂断', { sanity: -6 }, '挂掉后盯着天花板发了会儿呆。'),
+    OPT('报喜不报忧并要生活费', { sanity: 5, money: 60 }, '妈妈转了钱，还问你有没有好好上课。', { chance: CH(0.3, { sanity: -6 }, '妈妈追问成绩，你支支吾吾，钱还是转了。') })
+  ]),
+  EV('E20', '学霸借笔记', 'social', 30, { minWeek: 6, maxWeek: 9 }, '班里的学霸主动问你要不要一起看他的笔记。', [
+    OPT('借来复印', { money: -15, stamina: -3, prof: { course: 'choose', delta: 6 } }, '他的笔记比老师的 PPT 清楚十倍。'),
+    OPT('请他讲两小时', { stamina: -8, sanity: 4, prof: { course: 'choose', delta: 8 } }, '讲完豁然开朗，就是有点欠人情。'),
+    OPT('谢绝', { sanity: -2 }, '嘴上说不用，心里有点后悔。')
+  ]),
+  EV('E21', '图书馆占座冲突', 'social', 50, { minWeek: 4, maxWeek: 9 }, '你离开十分钟，座位上多了个书包，主人正在你旁边假装看书。', [
+    OPT('礼貌理论', { sanity: -8, stamina: -3 }, '他挪了，但你们俩都学不进去。'),
+    OPT('换地方', { stamina: -4, sanity: -3 }, '绕了三层楼才找到空位。'),
+    OPT('直接坐下挤一挤', { sanity: -5, stamina: -2 }, '两个人胳膊肘碰来碰去。')
+  ]),
+  EV('E22', '实习宣讲会', 'social', 35, { minWeek: 6, maxWeek: 9 }, '学院通知：某大厂来校宣讲，现场收简历。', [
+    OPT('去听并投简历', { stamina: -8, sanity: 10, money: -10 }, 'HR 说大二可以来实习。'),
+    OPT('只去听', { stamina: -5, sanity: 6 }, '听完觉得自己还差得远。'),
+    OPT('不去', { sanity: -4, prof: { course: 'java', delta: 3 } }, '省了两小时，多敲了几行代码。')
+  ]),
+  EV('E23', '网吧通宵', 'risky', 25, { sanityBelow: 40 }, '凌晨一点，你盯着屏幕，突然觉得宿舍的空气闷得喘不过气。', [
+    OPT('去网吧通宵', { sanity: 25, health: -15, stamina: -30, gameProf: 3, skipNextDay: true, night: 'allnight' }, '天亮才回宿舍，脑子一片空白。'),
+    OPT('下楼走一圈', { sanity: 10, stamina: -3 }, '夜风吹了半小时，好受一些。'),
+    OPT('硬扛继续看书', { sanity: -6, prof: { course: 'choose', delta: 5 } }, '字都认识，但一个字也没进脑子。')
+  ]),
+  EV('E24', '天台吹风', 'risky', 10, { sanityBelow: 25 }, '你站在宿舍楼天台，风很大，楼下的人小得像蚂蚁。', [
+    OPT('待一小时', { sanity: 20, stamina: -5, health: -3 }, '吹完风，好像什么都能放下了。'),
+    OPT('给朋友打电话', { sanity: 15, stamina: -3 }, '聊了四十分钟，他在那边也刚下班。'),
+    OPT('十分钟就下去', { sanity: 6 }, '风太冷，站不住。')
+  ]),
+  EV('E25', '考前押题讲座', 'course', 45, { minWeek: 8, maxWeek: 9 }, '学院组织考前串讲，据说押中率很高，但要提前占座。', [
+    OPT('占座听完整场', { stamina: -12, sanity: -5, prof: { course: 'all_major', delta: 4 } }, '讲了三个小时，讲义记满了。'),
+    OPT('只录不听', { sanity: 2, prof: { course: 'choose', delta: 2 } }, '录音躺在手机里，再没点开过。'),
+    OPT('不去', { stamina: 10, prof: { course: 'all_major', delta: -2 } }, '睡了个午觉，别人在听课。')
+  ]),
+  EV('E26', '体测通知', 'life', 40, { minWeek: 8, maxWeek: 9 }, '体育老师发通知：本周内必须完成一次长跑测试，不合格要补测。', [
+    OPT('当天去跑', { stamina: -18, sanity: 8, runCount: 1 }, '跑完躺草地上，天特别蓝。'),
+    OPT('拖到最后一天', { stamina: -20, sanity: -3, runCount: 1 }, '差点没赶上，跑完腿抽筋。'),
+    OPT('请假', { sanity: -10, leaveCount: -1 }, '老师登记了免测，但你心里不舒服。')
+  ]),
+  EV('E27', '教学楼电梯坏了', 'life', 60, {}, '早八在六楼，电梯门口贴了张纸：维修中。', [
+    OPT('爬楼梯', { stamina: -8, sanity: -2 }, '到教室时后背湿透了。'),
+    OPT('等下一班电梯', { prof: { course: 'firstMajorToday', delta: -3 } }, '老师已经讲到第二页。'),
+    OPT('干脆不回宿舍拿书', { sanity: 2, prof: { course: 'firstMajorToday', delta: -2 } }, '两个人共用一本书。')
+  ]),
+  EV('E28', '期末前的空教室', 'course', 50, { minWeek: 6, maxWeek: 9 }, '你找到一间空教室，安静得只有风扇声。', [
+    OPT('一口气复习 3 格', { stamina: -12, sanity: -6, prof: { course: 'choose', delta: 8 } }, '三个小时，几乎没走神。'),
+    OPT('复习 1 格就撤', { stamina: -4, prof: { course: 'choose', delta: 4 } }, '刚进状态就困了。'),
+    OPT('趴在桌上睡', { stamina: 20, sanity: 5 }, '睡得很沉，醒来看见夕阳。')
+  ]),
+
+  /* ---- 6.4.4 里程碑 ---- */
+  EV('E29', '社团招新嘉年华', 'milestone', 0, { minWeek: 5, maxWeek: 5 }, '社团一条街摆满摊位，学长学姐都在卖力拉人。', [
+    OPT('加入技术社团', { money: -20, sanity: 8, stamina: -5, flag: { clubJoined: true } }, '领了社员证，周末多了个去处。'),
+    OPT('只逛不加入', { sanity: 3, stamina: -3 }, '手里全是传单，一个也没报。'),
+    OPT('绕路回宿舍', { sanity: -5 }, '热闹是他们的，你只想躺着。')
+  ]),
+
+  /* ---- 6.4.5 新增生活类 ---- */
+  EV('E30', '宿舍楼停水', 'life', 55, {}, '宿舍楼水管爆了，通知停水到明天中午。', [
+    OPT('买桶装水应急', { money: -15, stamina: -3, sanity: -2 }, '用矿泉水刷的牙，肉疼。'),
+    OPT('去教学楼接水', { stamina: -8, sanity: -3 }, '来回三趟，水洒了一半。'),
+    OPT('忍一晚不洗漱', { sanity: -5, health: -3 }, '第二天自己都嫌弃自己。')
+  ]),
+  EV('E31', '食堂多刷钱', 'life', 50, {}, '食堂阿姨多刷了你十块钱，你走出三步才发现。（多刷的 10 元已在当日餐饮结算中扣除）', [
+    OPT('回去要', { money: 10, stamina: -3, sanity: -4 }, '阿姨道了歉，把钱退你了。'),
+    OPT('算了', { sanity: -5 }, '一整天都在想那十块钱。'),
+    OPT('在意见簿留言', { sanity: 3, stamina: -2 }, '写了条提醒，后面的同学说谢谢。')
+  ]),
+  EV('E32', '图书馆借书逾期', 'life', 45, { minWeek: 2 }, '图书馆邮件：三本书逾期一周，每本每天一毛，合计 2 元。', [
+    OPT('自己去还', { stamina: -5, money: -2 }, '交完罚款，一身轻松。'),
+    OPT('请室友顺路还', { sanity: -2, money: -2 }, '室友帮你还了，欠个人情。'),
+    OPT('拖着不管', { money: -5, sanity: -5 }, '又拖了一周，罚款翻倍，心在滴血。')
+  ]),
+  EV('E33', '查寝大扫除', 'life', 50, { minWeek: 3 }, '辅导员通知明天查寝，宿舍要整理干净。', [
+    OPT('认真大扫除', { stamina: -10, sanity: 5 }, '地板亮得能照镜子。'),
+    OPT('只整理自己床铺', { stamina: -4, sanity: -2 }, '室友的桌子被点名了。'),
+    OPT('装没看见', { sanity: -6 }, '没查到你宿舍，虚惊一场。', { chance: CH(0.4, { sanity: -5 }, '辅导员推门进来，记了全宿舍一次。') })
+  ]),
+  EV('E50', '考前失眠', 'life', 50, { minWeek: 8, maxWeek: 9 }, '考试前一晚，你躺在床上，脑子里全是没复习的章节。', [
+    OPT('起来继续看', { stamina: -12, sanity: -5, health: -5, prof: { course: 'choose', delta: 6 } }, '看了两小时，更清醒了。'),
+    OPT('听白噪音硬睡', { stamina: 15, sanity: 3 }, '数了八百只羊，终于睡了。'),
+    OPT('起来打游戏', { sanity: 8, stamina: -8, health: -3 }, '赢了两把，天快亮了。')
+  ]),
+
+  /* ---- 6.4.6 新增课程耦合 ---- */
+  EV('E35', 'Java 大作业组队', 'course', 70, { requiresCourseToday: 'java' }, 'Java 老师布置大作业：三人组队，两周后答辩。', [
+    OPT('主动当组长', { stamina: -10, sanity: -6, prof: { course: 'java', delta: 6 } }, '答辩拿了小组最高分。'),
+    OPT('找大神组队', { sanity: -4, prof: { course: 'java', delta: 3 } }, '大神带你飞，答辩顺利。', { chance: CH(0.4, { sanity: -3 }, '大神说满员了。', true) }),
+    OPT('单人一组', { stamina: -15, sanity: -8, prof: { course: 'java', delta: 8 } }, '一个人写完全部，累但值得。')
+  ]),
+  EV('E36', '前端课堂演示', 'course', 60, { requiresCourseToday: 'web' }, '前端老师说下节课随机抽人演示作业。', [
+    OPT('提前准备', { stamina: -8, sanity: -3, prof: { course: 'web', delta: 8 } }, '演示很顺，老师点头。'),
+    OPT('祈祷别抽中', { sanity: -8 }, '没抽中，虚惊一场。', { chance: CH(0.5, { sanity: -5, prof: { course: 'web', delta: -4 } }, '抽中你了，讲得磕磕绊绊。', true) }),
+    OPT('请室友代签后翘课', { sanity: -4, stamina: 10, prof: { course: 'web', delta: -5 } }, '逃过一劫，但下节课更慌。')
+  ]),
+  EV('E37', '数据库实验数据丢失', 'course', 55, { requiresCourseToday: 'db' }, '机房突然断电，你没保存的 SQL 全没了。', [
+    OPT('重做一遍', { stamina: -12, sanity: -5, prof: { course: 'db', delta: 6 } }, '第二遍熟练多了。'),
+    OPT('拿同学文件改改', { sanity: -6, prof: { course: 'db', delta: 2 } }, '老师居然没发现。', { chance: CH(0.3, { sanity: -5, prof: { course: 'db', delta: -3 } }, '老师一眼看出表名没改。', true) }),
+    OPT('交半成品', { sanity: -3, prof: { course: 'db', delta: -4 } }, '助教给了个同情分。')
+  ]),
+  EV('E38', 'Android 真机调试', 'course', 55, { requiresCourseToday: 'android' }, '真机演示时，你的手机连不上电脑。', [
+    OPT('买新数据线', { money: -25, stamina: -8, prof: { course: 'android', delta: 7 } }, '换了根线，居然好了。'),
+    OPT('借同学手机', { sanity: -4, prof: { course: 'android', delta: 4 } }, '又欠了个人情。'),
+    OPT('只看别人演示', { sanity: -2, prof: { course: 'android', delta: -4 } }, '看懂了，手还是生的。')
+  ]),
+  EV('E39', '政治课随堂测验', 'course', 60, { requiresCourseToday: 'politics' }, '政治老师突然说：拿出纸来，随堂测验。', [
+    OPT('凭记忆硬写', { sanity: -6, stamina: -3 }, '交上去才发现背面还有题。'),
+    OPT('偷看邻座', { sanity: -4 }, '老师咳了一声，你手一抖。', { chance: CH(0.4, { sanity: -10 }, '被老师当场点名，测验记零分。') }),
+    OPT('交白卷', { sanity: -8 }, '老师看了你一眼，什么也没说。')
+  ]),
+  EV('E40', '创业指导路演改期', 'course', 45, { requiresCourseToday: 'startup' }, '老师说路演提前到下周，各组抓紧。', [
+    OPT('本周加班做', { stamina: -10, sanity: 8 }, '提前完成，路演那天不慌。'),
+    OPT('按原计划做', { sanity: -6, stamina: -3 }, '老师临时改期，你差点没做完。'),
+    OPT('让组员多干点', { sanity: -4 }, '组员这次挺给力，你轻松不少。', { chance: CH(0.5, { stamina: -8, sanity: -5 }, '组员说好的分工，最后你一个人补天。') })
+  ]),
+  EV('E41', '体育课加练', 'course', 55, { requiresCourseToday: 'pe' }, '体育老师说今天测长跑，跑完还要加练。', [
+    OPT('认真跑', { stamina: -15, sanity: 5, runCount: 1 }, '跑完腿在抖，但很有成就感。'),
+    OPT('少跑半圈', { stamina: -8, sanity: -3 }, '老师没发现，你偷偷松了口气。', { chance: CH(0.3, { stamina: -2 }, '老师站在终点数圈。') }),
+    OPT('请假躲跑', { sanity: -5, leaveCount: -1 }, '老师批了，但下次还得补。')
+  ]),
+  EV('E42', '老师下课拖堂', 'life', 50, {}, '下课铃响了，老师却说：再讲五分钟。', [
+    OPT('老实听完', { stamina: -3, sanity: -3, prof: { course: 'firstMajorToday', delta: 2 } }, '多听了一题，值了。'),
+    OPT('从后门溜走', { stamina: -2, sanity: -5 }, '老师没看见，你溜得飞快。', { chance: CH(0.3, { sanity: -5, prof: { course: 'firstMajorToday', delta: -2 } }, '老师抬头正好看见你。') }),
+    OPT('趴桌上装睡', { stamina: 3, sanity: -3 }, '老师没管你，但你睡得不舒服。')
+  ]),
+  EV('E43', '学习通崩了', 'course', 50, { minWeek: 3, maxWeek: 9 }, '学习通又崩了，签到和作业都传不上去。', [
+    OPT('反复刷新等恢复', { stamina: -5, sanity: -6 }, '刷到半夜，终于传上去了。'),
+    OPT('问同学备用入口', { sanity: -2, prof: { course: 'choose', delta: 3 } }, '同学教了你一个备用入口。'),
+    OPT('不管了', { sanity: -4 }, '老师说过了点，算迟到。', { chance: CH(0.4, { prof: { course: 'firstMajorToday', delta: -2 } }, '老师说过了点，算迟到。') })
+  ]),
+  EV('E44', '考前划重点', 'course', 60, { minWeek: 8, maxWeek: 9 }, '老师关上门：今天讲的都是重点，你们懂的。', [
+    OPT('全程录音记笔记', { stamina: -8, sanity: -3, prof: { course: 'all_major', delta: 5 } }, '记了满满八页纸。'),
+    OPT('只记最虚的课', { stamina: -4, prof: { course: 'choose', delta: 8 } }, '好钢用在刀刃上。'),
+    OPT('走神玩手机', { sanity: 3, prof: { course: 'firstMajorToday', delta: -3 } }, '一节课刷了半小时短视频。')
+  ]),
+
+  /* ---- 6.4.7 新增社交 / 金钱 / 心理 ---- */
+  EV('E45', '室友借钱', 'social', 45, {}, '室友说生活费不够了，想借 200 块。', [
+    OPT('借给他', { money: -200, sanity: 8 }, '他说下个月一定还。'),
+    OPT('只借 50', { money: -50, sanity: 3 }, '室友说谢谢，但有点尴尬。'),
+    OPT('不借', { sanity: -8 }, '晚上宿舍气氛有点微妙。')
+  ]),
+  EV('E46', '同乡会聚餐', 'social', 40, { minWeek: 2 }, '老乡群通知周末聚餐，能见到同校的学长学姐。', [
+    OPT('去聚餐', { money: -50, sanity: 12, stamina: -5 }, '吃到了家乡菜，聊到很晚。'),
+    OPT('只去打招呼', { stamina: -3, sanity: 4 }, '露了个脸，提前走了。'),
+    OPT('不去', { sanity: -5 }, '群里晒合照，你有点后悔。')
+  ]),
+  EV('E47', '社团例会与团建', 'social', 45, { minWeek: 6, flagRequired: 'clubJoined' }, '社团通知：周五例会加团建，新成员都要到。', [
+    OPT('全程参加', { money: -30, stamina: -8, sanity: 12 }, '狼人杀玩到凌晨，认识不少人。'),
+    OPT('只参加例会', { stamina: -4, sanity: 4 }, '例会结束就溜了。'),
+    OPT('请假不去', { sanity: -6 }, '部长说下次活动必须到。')
+  ]),
+  EV('E48', '心理咨询开放日', 'social', 35, {}, '心理中心开放日，免费做压力测试，还送小礼品。', [
+    OPT('认真做全套', { stamina: -5, sanity: 12 }, '老师给了几条建议，你听进去了。'),
+    OPT('只做免费量表', { stamina: -2, sanity: 5 }, '结果说还行。'),
+    OPT('不去', { sanity: -4 }, '室友说小礼品挺实用。')
+  ]),
+
+  /* ---- 6.4.8 低理智专属 ---- */
+  EV('E34', '功能饮料囤货', 'risky', 30, { sanityBelow: 40 }, '深夜自动售货机前，你在犹豫要不要买一箱功能饮料。', [
+    OPT('买一箱', { money: -60, stamina: 20, sanity: 5, health: -8, maxStaminaNextDay: -20 }, '精神了一晚上，心跳有点快。'),
+    OPT('只买一罐', { money: -8, stamina: 8, sanity: 3, health: -3 }, '一罐下去，勉强撑过今晚。'),
+    OPT('不买，回去睡觉', { stamina: 20, sanity: -3 }, '困到不行，还是睡了。')
+  ]),
+  EV('E49', '深夜暴食冲动', 'risky', 30, { sanityBelow: 40 }, '深夜十一点，你突然想吃重油重辣的东西。', [
+    OPT('点重辣外卖', { money: -40, sanity: 15, health: -8, stamina: -5 }, '吃的时候很爽，半夜胃疼。'),
+    OPT('吃泡面凑合', { money: -8, sanity: 5, health: -3 }, '一碗泡面下肚，聊胜于无。'),
+    OPT('喝水忍过去', { sanity: -8, stamina: 5 }, '饿着饿着就睡了。')
+  ])
+];
+
+/* ========= 默认课表 =========
+   周一 2 门主课 + 政治 / 周二 2 门主课 / 周三 2 门主课 + 创业
+   周四 2 门主课 / 周五 2 门主课 + 体育
+   专业课 3/3/2/2（共 10 节）+ 公共课 3 节 = 13 节，自由槽 12 个
+   数据维度：[天(0-4)][槽(0-4)]
+*/
+function defaultGrid() {
+  return [
+    ['java', 'java', 'politics', null, null],
+    ['web', 'web', null, null, null],
+    ['db', 'db', 'startup', null, null],
+    ['android', 'android', null, null, null],
+    ['java', 'web', 'pe', null, null]
+  ];
+}
+
+/* ========= 系统随机排课 =========
+   硬约束：专业课 ≥10 节 / 每天 ≥1 节专业课 / 3 门公共课各 ≥1 节
+   生成 10 专业课 + 3 公共课 = 13 节；失败有限重试，最终回退到合法默认课表。
+*/
+function isValidGrid(grid) {
+  let majorTotal = 0;
+  const pubCount = { politics: 0, startup: 0, pe: 0 };
+  for (let d = 0; d < 5; d++) {
+    let majorToday = 0;
+    for (let s = 0; s < 5; s++) {
+      const id = grid[d][s];
+      if (!id) continue;
+      if (COURSE_DEFS[id].type === 'major') { majorTotal++; majorToday++; }
+      else if (pubCount[id] !== undefined) pubCount[id]++;
+    }
+    if (majorToday < 1) return false;
+  }
+  if (majorTotal < 10) return false;
+  if (pubCount.politics < 1 || pubCount.startup < 1 || pubCount.pe < 1) return false;
+  return true;
+}
+
+function generateGrid() {
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const grid = [[null, null, null, null, null], [null, null, null, null, null], [null, null, null, null, null], [null, null, null, null, null], [null, null, null, null, null]];
+    /* 每天先保底 1 门专业课，再把 5 个额外专业课随机分配，单日最多 3 门 */
+    const majorCounts = [1, 1, 1, 1, 1];
+    for (let i = 0; i < 5; i++) {
+      const candidates = [0, 1, 2, 3, 4].filter(function (d) { return majorCounts[d] < 3; });
+      const d = candidates[Math.floor(random() * candidates.length)];
+      majorCounts[d]++;
+    }
+    /* 三门公共课各自随机塞进还有空位的某一天 */
+    const pubs = ['politics', 'startup', 'pe'];
+    const pubDay = {};
+    for (const id of pubs) {
+      const candidates = [0, 1, 2, 3, 4].filter(function (d) { return majorCounts[d] + 1 <= 5; });
+      if (!candidates.length) break;
+      pubDay[id] = candidates[Math.floor(random() * candidates.length)];
+    }
+    if (Object.keys(pubDay).length !== 3) continue;
+    /* 填充课程并打乱每天槽位 */
+    const majors = MAJOR_IDS.slice();
+    const cells = [];
+    for (let d = 0; d < 5; d++) {
+      for (let i = 0; i < majorCounts[d]; i++) cells.push({ d, id: majors[Math.floor(random() * majors.length)] });
+    }
+    pubs.forEach(function (id) { cells.push({ d: pubDay[id], id: id }); });
+    cells.sort(function () { return random() - 0.5; });
+    for (const c of cells) {
+      for (let s = 0; s < 5; s++) {
+        if (!grid[c.d][s]) { grid[c.d][s] = c.id; break; }
+      }
+    }
+    if (isValidGrid(grid)) return grid;
+  }
+  return defaultGrid();
+}
+
+/* ========= 状态构造 ========= */
+function createState(seed) {
+  const courses = {};
+  ALL_IDS.forEach(function (id) {
+    courses[id] = {
+      name: COURSE_DEFS[id].name,
+      type: COURSE_DEFS[id].type,
+      prof: 0,
+      weeklySlots: COURSE_DEFS[id].weeklySlots
+    };
+  });
+  const grid = {};
+  grid[1] = generateGrid();
+
+  return {
+    meta: {
+      version: 'demo-0.1',
+      seed: seed,
+      startedAt: Date.now(),
+      turnIndex: 0
+    },
+    time: {
+      week: 1,
+      dayOfWeek: 1,
+      phase: 'day',
+      isExamWeek: false
+    },
+    player: {
+      stamina: 100,
+      health: 100,
+      sanity: 100,
+      gameProf: 0,
+      money: 425,
+      leaveCount: 5,
+      runCount: 0,
+      highIntensityDays: 0,
+      gameCountThisWeek: 0,
+      proxyCountThisWeek: 0,
+      studyKitThisWeek: true,
+      isCollapsed: false,
+      maxStaminaNextDay: 0,
+      skipClassNextDay: false,
+      restSkipDays: 0
+    },
+    courses: courses,
+    schedule: { grid: grid },
+    log: [],
+    flags: {},
+    records: clone(record),
+    weekly: initWeekly(),
+    day: initDay(),
+    exam: { pending: false, taken: false, scores: {}, failed: [], retakeTaken: false, retakeScores: {}, enteredRetake: false },
+    eventState: { lastTrigger: {}, turnsSinceRare: 0 },
+    stats: { collapseCount: 0 }
+  };
+}
+
+function initWeekly() {
+  const gain = {}, count = {};
+  ALL_IDS.forEach(function (id) { gain[id] = 0; count[id] = 0; });
+  return {
+    profGain: gain,
+    classCount: count,
+    gameProfGain: 0,
+    hadLateNight: false,
+    mealStreak: 0
+  };
+}
+
+function initDay() {
+  return {
+    classesRun: 0,
+    freeSlotsLeft: 0,
+    reviewsByCourse: {},
+    runToday: 0,
+    skippedCourses: [],
+    mealsEaten: 0,
+    missedMeals: 0,
+    ateAll: false,
+    hadLate: false,
+    exhausted: false,
+    eventDone: false,
+    eventCount: 0
+  };
+}
+
+function initRuntime() {
+  if (!state.weekly) state.weekly = initWeekly();
+  if (!state.day) state.day = initDay();
+  if (!state.stats) state.stats = { collapseCount: 0 };
+  if (!state.exam) state.exam = { taken: false, scores: {}, failed: [], retakeTaken: false, retakeScores: {} };
+  if (!state.eventState) state.eventState = { lastTrigger: {}, turnsSinceRare: 0 };
+  if (!state.flags) state.flags = {};
+  if (!state.courses) state.courses = {};
+  const p = state.player;
+  if (p.maxStaminaNextDay === undefined) p.maxStaminaNextDay = 0;
+  if (p.skipClassNextDay === undefined) p.skipClassNextDay = false;
+  if (p.restSkipDays === undefined) p.restSkipDays = 0;
+  if (p.skipMode === undefined) p.skipMode = null;
+  if (p.gameCountThisWeek === undefined) p.gameCountThisWeek = 0;
+  if (p.gameProf === undefined) p.gameProf = 0;
+  if (p.proxyCountThisWeek === undefined) p.proxyCountThisWeek = 0;
+  if (state.weekly.gameProfGain === undefined) state.weekly.gameProfGain = 0;
+  if (!state.schedule || !state.schedule.grid) {
+    state.schedule = { grid: {} };
+  }
+  if (!state.schedule.grid[state.time.week] && state.time.week <= 9) {
+    state.schedule.grid[state.time.week] = generateGrid();
+  }
+}
+
+/* ========= 存档 ========= */
+function saveGame() {
+  if (!state) return;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  } catch (e) { /* 存档失败不阻塞游戏 */ }
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s || !s.meta || !s.player) return null;
+    return s;
+  } catch (e) {
+    try { localStorage.removeItem(SAVE_KEY); } catch (e2) {}
+    return null;
+  }
+}
+
+function loadRecord() {
+  try {
+    const raw = localStorage.getItem(RECORD_KEY);
+    if (!raw) return { bestGrade: null, bestAvgScore: 0, bestRunCount: 0, clearedAt: 0, attempts: 0 };
+    const r = JSON.parse(raw);
+    return {
+      bestGrade: r.bestGrade || null,
+      bestAvgScore: r.bestAvgScore || 0,
+      bestRunCount: r.bestRunCount || 0,
+      clearedAt: r.clearedAt || 0,
+      attempts: r.attempts || 0
+    };
+  } catch (e) {
+    return { bestGrade: null, bestAvgScore: 0, bestRunCount: 0, clearedAt: 0, attempts: 0 };
+  }
+}
+
+function saveRecord() {
+  try { localStorage.setItem(RECORD_KEY, JSON.stringify(record)); } catch (e) {}
+}
+
+/* ========= 日志 ========= */
+function pushLog(text) {
+  if (!state) return;
+  state.log.push({
+    t: text,
+    week: state.time.week,
+    day: state.time.dayOfWeek
+  });
+  if (state.log.length > 200) state.log.shift();
+}
+
+/* ========= 渲染 ========= */
+function renderAll() {
+  document.body.classList.toggle('title-mode', ui.phase === 'title');
+  renderTop();
+  renderSidebar();
+  renderLog();
+  renderCenter();
+}
+
+function barHTML(value, cls, dangerAt) {
+  let cells = '';
+  const filled = Math.round(clamp(value, 0, 100) / 5);
+  for (let i = 0; i < 20; i++) {
+    cells += '<i class="' + (i < filled ? 'on ' + cls : '') + '"></i>';
+  }
+  const danger = dangerAt !== undefined && value <= dangerAt;
+  return '<div class="bar' + (danger ? ' danger' : '') + '">' + cells + '</div>';
+}
+
+function renderTop() {
+  const clock = $('clock');
+  const stats = $('stats');
+  if (!state || ui.phase === 'title') {
+    clock.textContent = '— 未开始 —';
+    stats.innerHTML = '';
+    return;
+  }
+  const t = state.time;
+  clock.innerHTML = '<span class="wnum">' + (t.week === 10 ? '第10周 · 补考' : '第' + t.week + '周') +
+    '</span> · ' + (DAY_NAMES[t.dayOfWeek] || ('第' + t.dayOfWeek + '天'));
+
+  const p = state.player;
+  stats.innerHTML =
+    statHTML('体力', p.stamina, 'stam', true) +
+    statHTML('生命', p.health, 'hp', true) +
+    statHTML('理智', p.sanity, 'san', true) +
+    statHTML('游戏熟练', p.gameProf || 0, 'game', true) +
+    statHTML('金钱', p.money, 'money', false);
+}
+
+function statHTML(label, value, cls, isPercent) {
+  const shown = isPercent ? Math.round(value) : value;
+  return '<div class="stat"><div class="head"><span>' + label + '</span><b class="' +
+    (value <= 20 && isPercent ? 'red' : '') + '">' + shown + '</b></div>' +
+    barHTML(value, cls, isPercent ? 20 : undefined) + '</div>';
+}
+
+function miniBar(value) {
+  let out = '';
+  const filled = Math.round(clamp(value, 0, 100) / 5);
+  for (let i = 0; i < 20; i++) out += '<i class="' + (i < filled ? 'on' : '') + '"></i>';
+  return '<div class="mini-bar">' + out + '</div>';
+}
+
+function renderSidebar() {
+  const sb = $('sidebar');
+  if (!state || ui.phase === 'title') { sb.innerHTML = ''; return; }
+  let rows = '';
+  MAJOR_IDS.forEach(function (id) {
+    const c = state.courses[id];
+    rows += '<div class="course-row"><div class="name"><span>' + c.name +
+      '</span><span>' + Math.round(c.prof) + '</span></div>' + miniBar(c.prof) + '</div>';
+  });
+  const p = state.player;
+  sb.innerHTML =
+    '<div class="panel"><h2>课程熟练度</h2>' + rows +
+    '<div class="side-info">' +
+    '体育累计 <b>' + p.runCount + ' / 50</b><br>' +
+    '请假剩余 <b>' + p.leaveCount + ' / 5</b><br>' +
+    '本周资料 <b>' + (p.studyKitThisWeek ? '已缴' : '未缴') + '</b><br>' +
+    '游戏熟练 <b>' + Math.round(p.gameProf || 0) + ' / 100</b><br>' +
+    '开黑门槛 <b>' + (p.gameProf >= 40 ? '已解锁' : '40') + '</b> · 代练 <b>' + (p.gameProf >= 70 ? '已解锁' : '70') + '</b><br>' +
+    '自由槽 <b>' + (state.day ? state.day.freeSlotsLeft : 0) + '</b>' +
+    '</div></div>' +
+    '<div class="panel"><h2>本周状态</h2>' +
+    '<div style="font-size:12px;line-height:2;color:var(--dim)">' +
+    '周次：' + (state.time.week === 10 ? '补考周' : '第 ' + state.time.week + ' 周') + '<br>' +
+    '高强度日：' + p.highIntensityDays + ' 天<br>' +
+    '本周游戏：' + p.gameCountThisWeek + ' 次<br>' +
+    '熬夜记录：' + (state.weekly.hadLateNight ? '有' : '无') +
+    '</div></div>';
+}
+
+function renderLog() {
+  const list = $('loglist');
+  if (!state || ui.phase === 'title') { list.innerHTML = ''; return; }
+  const items = state.log.slice(-4);
+  list.innerHTML = items.map(function (it) {
+    return '<div><span class="dim">[W' + it.week + 'D' + it.day + ']</span> ' + it.t + '</div>';
+  }).join('');
+}
+
+function renderCenter() {
+  const c = $('center');
+  switch (ui.phase) {
+    case 'title': return renderTitle(c);
+    case 'schedule': return renderSchedule(c);
+    case 'dayStart': return renderDayStart(c);
+    case 'classRun': return renderClassRun(c);
+    case 'event': return renderEvent(c);
+    case 'eventResult': return renderEventResult(c);
+    case 'chooseCourse': return renderChooseCourse(c);
+    case 'freeTime': return renderFreeTime(c);
+    case 'meals': return renderMeals(c);
+    case 'night': return renderNight(c);
+    case 'dayEnd': return renderDayEnd(c);
+    case 'weekly': return renderWeekly(c);
+    case 'collapse': return renderCollapse(c);
+    case 'exam': return renderExam(c);
+    case 'examResult': return renderExamResult(c);
+    case 'retakeResult': return renderRetakeResult(c);
+    case 'ending': return renderEnding(c);
+    default:
+      c.innerHTML = '<div class="panel"><h2>系统</h2><p class="dim">流程尚未接入。</p></div>';
+  }
+}
+
+/* ---------- 标题页 ---------- */
+function renderTitle(c) {
+  const saved = loadGame();
+  const rec = record;
+  const gradeText = rec.bestGrade ? ('最高评级 ' + rec.bestGrade) : '暂无通关记录';
+  let menu = '<button class="btn gold big" onclick="startNewGame()">开始新游戏</button>';
+  if (saved) {
+    menu += '<button class="btn big" onclick="continueGame()">继续上次（第 ' + saved.time.week +
+      ' 周 · ' + (DAY_NAMES[saved.time.dayOfWeek] || ('第' + saved.time.dayOfWeek + '天')) + '）</button>';
+  }
+  c.innerHTML =
+    '<div class="title-screen">' +
+    '<div class="logo">大学生活模拟器</div>' +
+    '<div class="sub">RANDOM EVENTS · 52 TURNS · SURVIVE THE MIDTERM</div>' +
+    '<div class="menu">' + menu + '</div>' +
+    '<div class="record">' + gradeText + '<br>最高均分 ' + Math.round(rec.bestAvgScore) +
+    ' · 最多校园跑 ' + rec.bestRunCount + ' 次 · 尝试 ' + rec.attempts + ' 次</div>' +
+    '</div>';
+}
+
+/* ---------- 排课面板 ---------- */
+function validateGrid(g) {
+  const majorN = { java: 0, web: 0, db: 0, android: 0 };
+  const publicN = { politics: 0, startup: 0, pe: 0 };
+  const dayMajor = [0, 0, 0, 0, 0];
+  let total = 0;
+  for (let d = 0; d < 5; d++) {
+    for (let s = 0; s < 5; s++) {
+      const id = g[d][s];
+      if (!id) continue;
+      total++;
+      if (COURSE_DEFS[id].type === 'major') {
+        majorN[id]++;
+        dayMajor[d]++;
+      } else {
+        publicN[id]++;
+      }
+    }
+  }
+  const totalMajor = majorN.java + majorN.web + majorN.db + majorN.android;
+  const errors = [];
+  if (totalMajor < 10) errors.push('专业课不足 10 节');
+  if (publicN.politics < 1) errors.push('政治不足 1 节');
+  if (publicN.startup < 1) errors.push('创业指导不足 1 节');
+  if (publicN.pe < 1) errors.push('体育不足 1 节');
+  for (let d = 0; d < 5; d++) {
+    if (dayMajor[d] < 1) errors.push(DAY_NAMES[d + 1] + '没有专业课');
+  }
+  return {
+    majorN: majorN,
+    publicN: publicN,
+    totalMajor: totalMajor,
+    total: total,
+    free: 25 - total,
+    errors: errors,
+    ok: errors.length === 0
+  };
+}
+
+function renderSchedule(c) {
+  const week = state.time.week;
+  let g = state.schedule.grid[week];
+  if (!g) { g = generateGrid(); state.schedule.grid[week] = g; saveGame(); }
+  const v = validateGrid(g);
+  let head = '<tr><th></th>';
+  for (let d = 1; d <= 5; d++) head += '<th>' + DAY_NAMES[d] + '</th>';
+  head += '</tr>';
+  let body = '';
+  for (let s = 0; s < 5; s++) {
+    body += '<tr><td class="time">' + SLOT_TIMES[s] + '</td>';
+    for (let d = 0; d < 5; d++) {
+      const id = g[d][s];
+      body += '<td><div class="cell' + (id ? ' filled' : '') + '">' +
+        (id ? COURSE_DEFS[id].short : '空') + '</div></td>';
+    }
+    body += '</tr>';
+  }
+  const pubText = '政治 ' + v.publicN.politics + ' / 创业 ' + v.publicN.startup + ' / 体育 ' + v.publicN.pe;
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>' + (week === 10 ? '补考周' : '第 ' + week + ' 周') + ' · 本周课表</h2>' +
+    '<p class="dim" style="font-size:12px">课表由系统随机生成，同一周内固定不变；满足专业课 ≥10 节、每天至少 1 节专业课、3 门公共课各 ≥1 节。</p>' +
+    '<table class="schedule-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>' +
+    '<div class="validate">' +
+    '<span class="' + (v.totalMajor >= 10 ? 'ok' : 'bad') + '">专业课 ' + v.totalMajor + ' / 10</span>' +
+    '<span class="' + (v.publicN.politics >= 1 && v.publicN.startup >= 1 && v.publicN.pe >= 1 ? 'ok' : 'bad') + '">公共课 ' + pubText + '</span>' +
+    '<span class="' + (v.free >= 0 ? 'ok' : 'bad') + '">自由槽 ' + v.free + ' / 12（固定 13 节）</span>' +
+    '<span class="' + (v.errors.length === 0 ? 'ok' : 'bad') + '">' + (v.errors.length === 0 ? '校验通过' : v.errors.join('；')) + '</span>' +
+    '</div>' +
+    '<div class="action-row"><button class="btn gold" onclick="confirmSchedule()">开始本周</button></div>' +
+    '<p class="hint">自由槽用于复习、休息、午睡、校园跑、兼职、社交、打游戏、开黑与代练。</p>' +
+    '</div>';
+}
+
+function confirmSchedule() {
+  const week = state.time.week;
+  let g = state.schedule.grid[week];
+  if (!g) { g = generateGrid(); state.schedule.grid[week] = g; }
+  const v = validateGrid(g);
+  if (!v.ok) {
+    state.schedule.grid[week] = defaultGrid();
+  }
+  const vv = validateGrid(state.schedule.grid[week]);
+  pushLog('第 ' + week + ' 周课表：专业课 ' + vv.totalMajor + ' 节，自由槽 ' + vv.free + ' 个。');
+  saveGame();
+  ui.phase = 'dayStart';
+  renderAll();
+}
+
+/* ---------- 当天面板 ---------- */
+function todayGrid() {
+  const t = state.time;
+  const weeks = state.schedule.grid;
+  if (!weeks[t.week]) weeks[t.week] = generateGrid();
+  return weeks[t.week][t.dayOfWeek - 1] || [null, null, null, null, null];
+}
+
+function renderDayStart(c) {
+  const t = state.time;
+  const p = state.player;
+  const retake = (t.week === 10);
+  const grid = retake ? [null, null, null, null, null] : todayGrid();
+  const free = 5 - grid.filter(Boolean).length;
+
+  let slots = '';
+  for (let s = 0; s < 5; s++) {
+    const id = grid[s];
+    slots += '<div class="day-slot"><div class="t">' + SLOT_TIMES[s] + '</div><div class="c' +
+      (id ? '' : ' free') + '">' + (id ? COURSE_DEFS[id].name : '· 自由时间 ·') +
+      '<span class="tag" style="margin-left:8px">' + (id ? (COURSE_DEFS[id].type === 'major' ? '专业课' : '公共课') : '2 小时') + '</span></div></div>';
+  }
+
+  let extra = '';
+  if (retake) {
+    extra = '<p class="hint">补考周：不上课，每天 5 个自由格全部可安排；复习收益按天递减（第 1 天 +6 / 第 2 天 +4 / 第 3 天 +2 / 第 4 天起 +1）。</p>';
+  }
+
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>' + dayText(t.week, t.dayOfWeek) + '</h2>' +
+    '<div class="day-list">' + slots + '</div>' +
+    '<div class="validate"><span class="ok">今日自由槽 ' + free + ' 个</span>' +
+    '<span class="dim">体力 ' + Math.round(p.stamina) + ' · 理智 ' + Math.round(p.sanity) + ' · ¥' + p.money + '</span></div>' +
+    extra +
+    '<div class="action-row">' +
+    '<button class="btn gold big" onclick="startToday()">开始今天</button>' +
+    '</div>' +
+    '<p class="hint">流程：上课结算 → 随机事件 → 自由时间 → 餐饮 → 夜间作息 → 日结算。</p>' +
+    '</div>';
+}
+
+/* ============================================================
+   日循环：上课 → 事件 → 自由时间 → 餐饮 → 夜间 → 日结算
+   ============================================================ */
+
+/* ---------- 数值内核 ---------- */
+function addProf(courseId, delta, opts) {
+  opts = opts || {};
+  const c = state.courses[courseId];
+  if (!c) return 0;
+  if (delta > 0 && opts.weeklyCap) {
+    const used = state.weekly.profGain[courseId] || 0;
+    const room = Math.max(0, 16 - used);
+    const applied = Math.min(delta, room);
+    if (applied <= 0) return 0;
+    state.weekly.profGain[courseId] = used + applied;
+    c.prof = clamp(c.prof + applied, 0, 100);
+    return applied;
+  }
+  c.prof = clamp(c.prof + delta, 0, 100);
+  return delta;
+}
+
+function mergeEffects(base, extra) {
+  if (!extra) return base;
+  ['stamina', 'health', 'sanity', 'money', 'runCount', 'leaveCount', 'gameProf'].forEach(function (k) {
+    if (extra[k]) base[k] = (base[k] || 0) + extra[k];
+  });
+  if (extra.prof) {
+    if (base.prof) base.prof.delta += extra.prof.delta;
+    else base.prof = clone(extra.prof);
+  }
+  if (extra.flag) base.flag = Object.assign({}, base.flag || {}, extra.flag);
+  if (extra.maxStaminaNextDay) base.maxStaminaNextDay = extra.maxStaminaNextDay;
+  if (extra.skipToday) base.skipToday = true;
+  if (extra.skipNextDay) base.skipNextDay = true;
+  if (extra.night) base.night = extra.night;
+  return base;
+}
+
+function firstMajorCourseToday() {
+  const grid = todayGrid();
+  for (let i = 0; i < 5; i++) {
+    if (grid[i] && COURSE_DEFS[grid[i]].type === 'major') return grid[i];
+  }
+  return null;
+}
+
+function applyProfEffect(pr, chosenCourse) {
+  if (!pr) return;
+  let ids = [];
+  if (pr.course === 'all_major') ids = MAJOR_IDS.slice();
+  else if (pr.course === 'firstMajorToday') {
+    const first = firstMajorCourseToday();
+    if (first) ids = [first];
+  } else if (pr.course === 'choose') {
+    if (chosenCourse) ids = [chosenCourse];
+  } else if (state.courses[pr.course]) {
+    ids = [pr.course];
+  }
+  ids.forEach(function (id) { addProf(id, pr.delta, { weeklyCap: false }); });
+}
+
+function skipTodayClasses() {
+  const grid = todayGrid();
+  let n = 0;
+  grid.forEach(function (id) {
+    if (id && COURSE_DEFS[id].type === 'major') {
+      addProf(id, -5, { weeklyCap: false });
+      if (state.day.skippedCourses.indexOf(id) < 0) state.day.skippedCourses.push(id);
+      n++;
+    }
+  });
+  if (n) pushLog('今天全部课程请假：' + n + ' 节专业课熟练度 -5。');
+}
+
+function applyEffects(eff, chosenCourse) {
+  if (!eff) return;
+  const p = state.player;
+  if (eff.stamina) p.stamina = clamp(p.stamina + eff.stamina, 0, 100);
+  if (eff.health) p.health = clamp(p.health + eff.health, 0, 100);
+  if (eff.sanity) p.sanity = clamp(p.sanity + eff.sanity, 0, 100);
+  if (eff.gameProf) addGameProf(eff.gameProf);
+  if (eff.money) p.money = Math.max(0, p.money + eff.money);
+  if (eff.runCount) p.runCount = Math.max(0, p.runCount + eff.runCount);
+  if (eff.leaveCount) p.leaveCount = Math.max(0, p.leaveCount + eff.leaveCount);
+  if (eff.prof) applyProfEffect(eff.prof, chosenCourse);
+  if (eff.flag) Object.assign(state.flags, eff.flag);
+  if (eff.maxStaminaNextDay) p.maxStaminaNextDay = eff.maxStaminaNextDay;
+  if (eff.skipToday) skipTodayClasses();
+  if (eff.skipNextDay) {
+    p.skipClassNextDay = true;
+    p.skipClassReason = 'event';
+    pushLog('明天的课程将全部缺席。');
+  }
+  if (eff.night) {
+    state.day.nightOverride = {
+      kind: eff.night,
+      provided: { stamina: !!eff.stamina, health: !!eff.health, sanity: !!eff.sanity }
+    };
+  }
+}
+
+function triggerExhaustion() {
+  if (state.day.exhausted) return;
+  state.day.exhausted = true;
+  MAJOR_IDS.forEach(function (id) { addProf(id, -5, { weeklyCap: false }); });
+  pushLog('体力见底：强制昏睡，跳过全部剩余行动，全科熟练度 -5。');
+}
+
+/* ---------- 上课 ---------- */
+function runClasses(grid, results) {
+  const p = state.player;
+  let count = 0;
+  let lowStaminaClasses = 0;
+  for (let s = 0; s < 5; s++) {
+    const id = grid[s];
+    if (!id) continue;
+    if (p.stamina <= 0) break;
+    const before = p.stamina;
+    if (before < 50) lowStaminaClasses++;
+    p.stamina = clamp(p.stamina - 5, 0, 100);
+    count++;
+    let gain = 0;
+    if (COURSE_DEFS[id].type === 'major') {
+      const wc = state.weekly.classCount[id] || 0;
+      const base = wc >= 5 ? 1 : 2;
+      state.weekly.classCount[id] = wc + 1;
+      gain = addProf(id, base, { weeklyCap: true });
+    }
+    results.push({ slot: s, id: id, stamina: before - p.stamina, gain: gain });
+    if (p.stamina <= 0) {
+      triggerExhaustion();
+      results.push({ exhaust: true });
+      break;
+    }
+  }
+  state.day.classesRun = count;
+
+  let loss = count >= 5 ? -15 : count === 4 ? -8 : count === 3 ? -3 : 0;
+  if (count >= 3) {
+    p.highIntensityDays++;
+    const d = p.highIntensityDays;
+    if (d === 3) loss -= 2;
+    else if (d === 4) loss -= 5;
+    else if (d >= 5) loss -= 8;
+  } else {
+    p.highIntensityDays = 0;
+  }
+  if (lowStaminaClasses > 0) {
+    loss -= lowStaminaClasses * 2;
+    pushLog('体力低于 50 时上课，' + lowStaminaClasses + ' 节额外理智 -' + (lowStaminaClasses * 2) + '。');
+  }
+  if (loss !== 0) {
+    p.sanity = clamp(p.sanity + loss, 0, 100);
+    pushLog('今天上了 ' + count + ' 节课，理智 ' + loss +
+      (p.highIntensityDays >= 3 ? '（连续高强度第 ' + p.highIntensityDays + ' 天）' : '') + '。');
+  }
+}
+
+function startToday() {
+  const t = state.time;
+  const p = state.player;
+  state.day = initDay();
+  const grid = t.week === 10 ? [null, null, null, null, null] : todayGrid();
+  state.day.freeSlotsLeft = 5 - grid.filter(Boolean).length;
+  state.day.staminaCap = 100 + (p.maxStaminaNextDay || 0);
+  p.maxStaminaNextDay = 0;
+  if (p.stamina > state.day.staminaCap) p.stamina = state.day.staminaCap;
+  state.day.startSnapshot = {
+    stamina: p.stamina, health: p.health, sanity: p.sanity, money: p.money
+  };
+
+  ui.eventQueue = [];
+  if (t.week === 5 && t.dayOfWeek === 1 && !state.flags.e29_done && getEventById('E29')) {
+    ui.eventQueue.push('E29');
+  }
+
+  const results = [];
+  if (p.skipClassNextDay) {
+    const reason = p.skipClassReason || 'collapse';
+    grid.forEach(function (id) {
+      if (id && COURSE_DEFS[id].type === 'major') {
+        state.day.skippedCourses.push(id);
+        if (reason !== 'collapse') addProf(id, -5, { weeklyCap: false });
+      }
+    });
+    p.skipClassNextDay = false;
+    p.skipClassReason = null;
+    pushLog('全天课程缺席（' + (reason === 'collapse' ? '崩溃旷课' : '事件') + '）。');
+    results.push({ skipped: true });
+  } else if (t.week === 10) {
+    results.push({ free: true });
+  } else {
+    runClasses(grid, results);
+  }
+
+  ui.classResults = results;
+  ui.phase = 'classRun';
+  renderAll();
+}
+
+/* ---------- 事件抽取 ---------- */
+function todayHasCourse(courseId) {
+  if (!courseId) return true;
+  const grid = state.time.week === 10 ? [null, null, null, null, null] : todayGrid();
+  return grid.indexOf(courseId) >= 0;
+}
+
+function conditionOk(ev) {
+  const c = ev.condition || {};
+  const t = state.time;
+  const p = state.player;
+  if (c.minWeek && t.week < c.minWeek) return false;
+  if (c.maxWeek && t.week > c.maxWeek) return false;
+  if (c.requiresCourseToday && !todayHasCourse(c.requiresCourseToday)) return false;
+  if (c.requiresRunCountMin !== undefined && p.runCount < c.requiresRunCountMin) return false;
+  if (c.sanityBelow !== undefined && c.sanityBelow !== null && p.sanity >= c.sanityBelow) return false;
+  if (c.staminaBelow !== undefined && c.staminaBelow !== null && p.stamina >= c.staminaBelow) return false;
+  if (c.moneyBelow !== undefined && c.moneyBelow !== null && p.money >= c.moneyBelow) return false;
+  if (c.flagRequired && !state.flags[c.flagRequired]) return false;
+  if (c.flagMissing && state.flags[c.flagMissing]) return false;
+  return true;
+}
+
+function getEventById(id) {
+  for (let i = 0; i < EVENTS.length; i++) if (EVENTS[i].id === id) return EVENTS[i];
+  return null;
+}
+
+function rollEvent() {
+  if (!EVENTS.length) return null;
+  const es = state.eventState;
+  const turn = state.meta.turnIndex;
+  const pool = [];
+  let total = 0;
+  EVENTS.forEach(function (ev) {
+    if (!ev.weight || ev.weight <= 0) return;
+    if (!conditionOk(ev)) return;
+    const last = es.lastTrigger[ev.id];
+    if (last !== undefined && turn - last < 5) return;
+    let w = ev.weight;
+    if (ev.weekWeight && ev.weekWeight[state.time.week]) w = ev.weekWeight[state.time.week];
+    if (es.turnsSinceRare >= 3 && ev.weight <= 15) w *= 2;
+    pool.push({ ev: ev, w: w });
+    total += w;
+  });
+  if (!pool.length || total <= 0) return null;
+  let roll = random() * total;
+  let picked = pool[pool.length - 1].ev;
+  for (let i = 0; i < pool.length; i++) {
+    roll -= pool[i].w;
+    if (roll <= 0) { picked = pool[i].ev; break; }
+  }
+  es.lastTrigger[picked.id] = turn;
+  if (picked.weight <= 15) es.turnsSinceRare = 0;
+  else es.turnsSinceRare = (es.turnsSinceRare || 0) + 1;
+  return picked;
+}
+
+function beginEvent() {
+  const p = state.player;
+  if (state.day.exhausted) { enterMeals(); return; }
+  if (p.sanity <= 0 && !p.isCollapsed) { triggerCollapse('beginEvent'); return; }
+  let ev = null;
+  if (state.day.eventCount === 0) {
+    ev = rollEvent();
+    if (!ev && ui.eventQueue && ui.eventQueue.length) ev = getEventById(ui.eventQueue.shift());
+  } else if (ui.eventQueue && ui.eventQueue.length) {
+    ev = getEventById(ui.eventQueue.shift());
+  }
+  if (!ev) {
+    pushLog('今天没有触发随机事件。');
+    enterFreeTime();
+    return;
+  }
+  ui.currentEvent = ev;
+  state.day.eventCount++;
+  if (ev.id === 'E29') state.flags.e29_done = true;
+  if (ev.id === 'E31') {
+    state.player.money = Math.max(0, state.player.money - 10);
+    pushLog('食堂多刷了 ¥10（已在当日餐饮中扣除）。');
+  }
+  ui.phase = 'event';
+  renderAll();
+}
+
+function optNeedsCourse(opt) {
+  return !!(opt.effects && opt.effects.prof && opt.effects.prof.course === 'choose');
+}
+
+function chooseOption(idx) {
+  const ev = ui.currentEvent;
+  if (!ev) return;
+  const opt = ev.options[idx];
+  if (!opt) return;
+  if (opt.risky && state.player.sanity >= 40) return;
+  ui.pendingOption = opt;
+  if (optNeedsCourse(opt)) {
+    ui.phase = 'chooseCourse';
+    renderAll();
+    return;
+  }
+  applyPendingOption(null);
+}
+
+/* 文档 6.3：低理智专属选项（理智 < 40 解锁） */
+function examSoon() {
+  const t = state.time;
+  if (t.week === 9 && t.dayOfWeek >= 3) return true;
+  if (t.week === 10 && t.dayOfWeek >= 5) return true;
+  return false;
+}
+
+/* 文档 6.3：翘课只在该天课表有课的课堂/事件阶段提供；无课日、补考周、自由时间不提供 */
+function canSlackToday() {
+  if (state.time.week === 10) return false;
+  if (state.day && state.day.exhausted) return false;
+  return todayGrid().filter(Boolean).length > 0;
+}
+
+function chooseLowSanity(kind) {
+  const p = state.player;
+  if (p.sanity >= 40) return;
+  let opt = null;
+  if (kind === 'desperate') {
+    opt = { text: '豁出去了', effects: { health: -12, sanity: -5, prof: { course: 'choose', delta: 10 } }, resultText: '你硬撑着啃完一章，感觉半条命没了。', chance: null, risky: true };
+  } else if (kind === 'slack') {
+    if (!canSlackToday()) return;
+    opt = { text: '翘课回宿舍躺平', effects: { sanity: 18, stamina: 20, skipToday: true }, resultText: '你回宿舍倒头就睡，醒来天已经黑了。', chance: null, risky: true };
+  } else if (kind === 'grind') {
+    if (!examSoon()) return;
+    opt = { text: '通宵突击', effects: { health: -15, sanity: -10, maxStaminaNextDay: -20, prof: { course: 'choose', delta: 15 }, night: 'allnight' }, resultText: '天亮时你合上书，手一直在抖。', chance: null, risky: true };
+  }
+  if (!opt) return;
+  ui.pendingOption = opt;
+  if (optNeedsCourse(opt)) {
+    ui.phase = 'chooseCourse';
+    renderAll();
+    return;
+  }
+  applyPendingOption(null);
+}
+
+function chooseCourseFor(courseId) {
+  applyPendingOption(courseId);
+}
+
+function applyPendingOption(chosenCourse) {
+  const opt = ui.pendingOption;
+  const ev = ui.currentEvent;
+  if (!opt) return;
+  let eff = clone(opt.effects || {});
+  let failed = false;
+  if (opt.chance && random() < opt.chance.p) {
+    failed = true;
+    if (opt.chance.replace) eff = clone(opt.chance.failEffects || {});
+    else mergeEffects(eff, opt.chance.failEffects);
+  }
+  applyEffects(eff, chosenCourse);
+  const text = (failed && opt.chance.failText) ? opt.chance.failText : opt.resultText;
+  ui.eventResultText = text;
+  ui.eventResultFailed = failed;
+  pushLog('「' + ev.title + '」' + opt.text + ' → ' + text);
+  ui.pendingOption = null;
+  if (state.player.health <= 0) { endGame('D', '生命归零'); return; }
+  ui.phase = 'eventResult';
+  if (state.player.sanity <= 0) { triggerCollapse('eventResult'); return; }
+  renderAll();
+}
+
+function continueEvent() {
+  if (ui.eventQueue && ui.eventQueue.length) { beginEvent(); return; }
+  enterFreeTime();
+}
+
+/* ---------- 自由时间 ---------- */
+function effectiveReviewGain(courseId) {
+  const t = state.time;
+  let g;
+  if (t.week === 10) {
+    g = t.dayOfWeek === 1 ? 6 : t.dayOfWeek === 2 ? 4 : t.dayOfWeek === 3 ? 2 : 1;
+  } else {
+    g = state.player.studyKitThisWeek ? 4 : 2;
+    const room = 16 - (state.weekly.profGain[courseId] || 0);
+    g = Math.min(g, Math.max(0, room));
+  }
+  return g;
+}
+
+function enterFreeTime() {
+  if (state.day.exhausted) { enterMeals(); return; }
+  ui.phase = 'freeTime';
+  renderAll();
+}
+
+/* 游戏熟练度：每周最多 +18，100 封顶，不衰减 */
+function addGameProf(delta) {
+  const p = state.player;
+  const room = Math.max(0, 18 - (state.weekly.gameProfGain || 0));
+  if (room <= 0) return 0;
+  const before = p.gameProf || 0;
+  if (before >= 100) return 0;
+  const target = clamp(before + Math.min(delta, room), 0, 100);
+  const applied = target - before;   /* 只按真实增加量计周额度，100 封顶不消耗额度 */
+  if (applied <= 0) return 0;
+  p.gameProf = target;
+  state.weekly.gameProfGain = (state.weekly.gameProfGain || 0) + applied;
+  return applied;
+}
+
+/* 游戏熟练无法增加时的可见原因 */
+function gameProfCapReason() {
+  const p = state.player;
+  if ((p.gameProf || 0) >= 100) return '游戏熟练已达 100 上限';
+  if ((state.weekly.gameProfGain || 0) >= 18) return '本周游戏熟练度已达上限（+18），周一重置';
+  return '';
+}
+
+function doFreeAction(kind, courseId) {
+  const d = state.day;
+  const p = state.player;
+  if (!d) return;
+  if (d.freeSlotsLeft <= 0) {
+    pushLog('没有剩余自由格了，请点击「结束自由时间」。');
+    renderAll();
+    return;
+  }
+
+  if (kind === 'review') {
+    if (!courseId) return;
+    if ((d.reviewsByCourse[courseId] || 0) >= 2) return;
+    if (d.skippedCourses.indexOf(courseId) >= 0) return;
+    const g = effectiveReviewGain(courseId);
+    if (g <= 0) return;
+    p.stamina = clamp(p.stamina - 4, 0, 100);
+    p.sanity = clamp(p.sanity - 2, 0, 100);
+    const applied = addProf(courseId, g, { weeklyCap: state.time.week !== 10 });
+    d.reviewsByCourse[courseId] = (d.reviewsByCourse[courseId] || 0) + 1;
+    d.freeSlotsLeft--;
+    pushLog('复习 ' + COURSE_DEFS[courseId].name + ' 1 格：熟练度 +' + applied + '（体力 -4 / 理智 -2）。');
+  } else if (kind === 'rest') {
+    p.stamina = clamp(p.stamina + 12, 0, 100);
+    p.sanity = clamp(p.sanity + 4, 0, 100);
+    d.freeSlotsLeft--;
+    pushLog('平时休息 1 格：体力 +12，理智 +4。');
+  } else if (kind === 'nap') {
+    p.stamina = clamp(p.stamina + 20, 0, 100);
+    p.sanity = clamp(p.sanity + 3, 0, 100);
+    d.freeSlotsLeft--;
+    pushLog('午睡 1 格：体力 +20，理智 +3。');
+  } else if (kind === 'run') {
+    if (d.runToday >= 1) return;
+    p.stamina = clamp(p.stamina - 8, 0, 100);
+    p.sanity = clamp(p.sanity + 3, 0, 100);
+    p.runCount++;
+    d.runToday++;
+    d.freeSlotsLeft--;
+    pushLog('校园跑 1 次：体力 -8，理智 +3，累计 ' + p.runCount + ' / 50。');
+  } else if (kind === 'work') {
+    p.stamina = clamp(p.stamina - 10, 0, 100);
+    p.sanity = clamp(p.sanity - 4, 0, 100);
+    p.money += 50;
+    d.freeSlotsLeft--;
+    pushLog('兼职 1 格：¥+50，体力 -10，理智 -4。');
+  } else if (kind === 'social') {
+    if (state.time.week < 5 || p.money < 15) return;
+    p.stamina = clamp(p.stamina - 4, 0, 100);
+    p.sanity = clamp(p.sanity + 10, 0, 100);
+    p.money -= 15;
+    d.freeSlotsLeft--;
+    pushLog('社团 / 社交 1 格：理智 +10，¥-15。');
+  } else if (kind === 'game') {
+    const n = p.gameCountThisWeek;
+    const gain = n === 0 ? 8 : n === 1 ? 5 : 1;
+    const gp = addGameProf(6);
+    p.stamina = clamp(p.stamina - 5, 0, 100);
+    p.sanity = clamp(p.sanity + gain, 0, 100);
+    p.gameCountThisWeek++;
+    d.freeSlotsLeft--;
+    pushLog('打游戏 1 格：理智 +' + gain + '（本周第 ' + (n + 1) + ' 次），体力 -5，游戏熟练 +' + gp + '。' +
+      (gp <= 0 ? gameProfCapReason() + '，本次只回理智。' : ''));
+  } else if (kind === 'coop') {
+    if (p.gameProf < 40) return;
+    if (p.money < 10) return;
+    const gp = addGameProf(2);
+    p.stamina = clamp(p.stamina - 6, 0, 100);
+    p.sanity = clamp(p.sanity + 22, 0, 100);
+    p.money -= 10;
+    d.freeSlotsLeft--;
+    pushLog('和朋友开黑 1 格：理智 +22，体力 -6，¥-10，游戏熟练 +' + gp + '。' +
+      (gp <= 0 ? gameProfCapReason() + '。' : ''));
+  } else if (kind === 'boost') {
+    if (p.gameProf < 70) return;
+    if ((p.proxyCountThisWeek || 0) >= 2) return;
+    const gp = addGameProf(2);
+    p.stamina = clamp(p.stamina - 12, 0, 100);
+    p.sanity = clamp(p.sanity - 3, 0, 100);
+    p.money += 45;
+    p.proxyCountThisWeek = (p.proxyCountThisWeek || 0) + 1;
+    d.freeSlotsLeft--;
+    pushLog('游戏代练 1 格：¥+45，体力 -12，理智 -3，游戏熟练 +' + gp + '（本周第 ' + p.proxyCountThisWeek + ' / 2 次）。' +
+      (gp <= 0 ? gameProfCapReason() + '。' : ''));
+  } else {
+    return;
+  }
+
+  if (p.sanity <= 0 && !p.isCollapsed) { triggerCollapse('freeTime'); return; }
+  if (p.stamina <= 0) { triggerExhaustion(); enterMeals(); return; }
+  renderAll();
+}
+
+/* ---------- 餐饮 ---------- */
+function enterMeals() {
+  ui.mealPlan = { breakfast: 'eat', lunch: 'eat', dinner: 'eat' };
+  ui.phase = 'meals';
+  renderAll();
+}
+
+function toggleMeal(id) {
+  if (!ui.mealPlan) return;
+  ui.mealPlan[id] = ui.mealPlan[id] === 'eat' ? 'skip' : 'eat';
+  renderCenter();
+}
+
+function confirmMeals() {
+  const p = state.player;
+  const d = state.day;
+  let eaten = 0, missed = 0;
+  MEAL_DEFS.forEach(function (m) {
+    const plan = ui.mealPlan[m.id];
+    if (plan === 'eat' && p.money >= m.price) {
+      p.money -= m.price;
+      eaten++;
+    } else {
+      p.health = clamp(p.health - 5, 0, 100);
+      missed++;
+      pushLog((plan === 'eat' ? m.name + '余额不足，自动漏餐' : m.name + '主动省餐') + '：生命 -5。');
+    }
+  });
+  d.mealsEaten = eaten;
+  d.missedMeals = missed;
+  d.ateAll = (missed === 0);
+  if (d.ateAll) {
+    state.weekly.mealStreak = (state.weekly.mealStreak || 0) + 1;
+    if (state.weekly.mealStreak % 3 === 0) {
+      p.health = clamp(p.health + 5, 0, 100);
+      pushLog('连续 3 天吃满三餐：生命 +5。');
+    }
+  } else {
+    state.weekly.mealStreak = 0;
+  }
+  if (p.health <= 0) { endGame('D', '生命归零（漏餐）'); return; }
+  enterNight();
+}
+
+/* ---------- 夜间 ---------- */
+function enterNight() {
+  if (state.day && state.day.nightOverride) { autoNightOverride(); return; }
+  ui.phase = 'night';
+  renderAll();
+}
+
+/* 文档 6.2.1：事件显式写了的数值以事件为准，未写的仍走夜间硬性默认 */
+function autoNightOverride() {
+  const p = state.player;
+  const ov = state.day.nightOverride;
+  const cap = state.day.staminaCap || 100;
+  const late = ov.kind === 'late';
+  if (!ov.provided.stamina) p.stamina = clamp(p.stamina + (late ? 10 : 0), 0, cap);
+  if (!ov.provided.health) p.health = clamp(p.health - (late ? 8 : 15), 0, 100);
+  if (!ov.provided.sanity) p.sanity = clamp(p.sanity - (late ? 5 : 10), 0, 100);
+  state.weekly.hadLateNight = true;
+  pushLog('事件已占用夜间：' + (late ? '熬夜' : '通宵') + '，跳过作息选择（未提及的数值按硬性默认结算）。');
+  state.day.nightOverride = null;
+  if (p.health <= 0) { endGame('D', '生命归零（事件通宵）'); return; }
+  finishDay(false);
+}
+
+function doNight(kind, courseId) {
+  const p = state.player;
+  const cap = state.day.staminaCap || 100;
+  if (kind === 'sleep') {
+    p.stamina = clamp(p.stamina + 30, 0, cap);
+    pushLog('正常睡觉：体力 +30。');
+  } else if (kind === 'lateStudy') {
+    if (!courseId) return;
+    const applied = addProf(courseId, 7, { weeklyCap: state.time.week !== 10 });
+    p.stamina = clamp(p.stamina + 10, 0, cap);
+    p.health = clamp(p.health - 8, 0, 100);
+    p.sanity = clamp(p.sanity - 5, 0, 100);
+    state.weekly.hadLateNight = true;
+    pushLog('熬夜复习 ' + COURSE_DEFS[courseId].name + '：熟练度 +' + applied + '，体力 +10，生命 -8，理智 -5。');
+  } else if (kind === 'lateGame') {
+    const gp = addGameProf(5);
+    p.stamina = clamp(p.stamina + 10, 0, cap);
+    p.health = clamp(p.health - 8, 0, 100);
+    p.sanity = clamp(p.sanity + 8, 0, 100);
+    state.weekly.hadLateNight = true;
+    pushLog('熬夜打游戏：游戏熟练 +' + gp + '，体力 +10，生命 -8，理智 +8。');
+  } else if (kind === 'allStudy') {
+    if (!courseId) return;
+    const applied = addProf(courseId, 15, { weeklyCap: state.time.week !== 10 });
+    p.stamina = clamp(p.stamina + 0, 0, cap);
+    p.health = clamp(p.health - 15, 0, 100);
+    p.sanity = clamp(p.sanity - 10, 0, 100);
+    state.weekly.hadLateNight = true;
+    pushLog('通宵突击 ' + COURSE_DEFS[courseId].name + '：熟练度 +' + applied + '，体力 +0，生命 -15，理智 -10。');
+  } else {
+    return;
+  }
+  if (p.health <= 0) { endGame('D', '生命归零（夜间）'); return; }
+  if (p.sanity <= 0 && !p.isCollapsed) { triggerCollapse('finishDay'); return; }
+  finishDay(false);
+}
+
+/* ---------- 日结算 ---------- */
+function finishDay(afterCollapse) {
+  const p = state.player;
+  if (!afterCollapse && p.sanity > 0 && p.sanity < 40) {
+    p.sanity = clamp(p.sanity - 3, 0, 100);
+    pushLog('理智低于 40，雪崩：每日 -3。');
+  }
+  if (p.health <= 0) { endGame('D', '生命归零'); return; }
+  if (p.sanity <= 0 && !p.isCollapsed) { triggerCollapse('finishDay'); return; }
+
+  state.meta.turnIndex++;
+  const snap = state.day.startSnapshot || { stamina: p.stamina, health: p.health, sanity: p.sanity, money: p.money };
+  ui.daySummary = {
+    title: dayText(state.time.week, state.time.dayOfWeek),
+    stamina: p.stamina - snap.stamina,
+    health: p.health - snap.health,
+    sanity: p.sanity - snap.sanity,
+    money: p.money - snap.money,
+    staminaNow: p.stamina, healthNow: p.health, sanityNow: p.sanity, moneyNow: p.money,
+    meals: state.day.mealsEaten,
+    missed: state.day.missedMeals,
+    exhausted: state.day.exhausted
+  };
+  ui.phase = 'dayEnd';
+  saveGame();
+  renderAll();
+}
+
+function continueDay() {
+  advanceDay();
+}
+
+function advanceDay() {
+  const t = state.time;
+  if (t.week <= 9 && t.dayOfWeek === 5) { settleWeek(); return; }
+  if (t.week === 10 && t.dayOfWeek === 7) { showRetakeExam(); return; }
+  t.dayOfWeek++;
+  beginDay();
+}
+
+function beginDay() {
+  if (state.player.restSkipDays > 0) { processRestDay(); return; }
+  ui.phase = 'dayStart';
+  renderAll();
+}
+
+/* 跳过天数：旷课 3 天 / 请假 2 天，逐日自动结算餐费、理智雪崩与体力恢复 */
+function processRestDay() {
+  const p = state.player;
+  const absent = p.skipMode === 'absent';
+  p.restSkipDays--;
+  p.stamina = clamp(p.stamina + 30, 0, 100);
+  if (!absent) p.sanity = clamp(p.sanity + 5, 0, 100);
+  if (p.sanity > 0 && p.sanity < 40) {
+    p.sanity = clamp(p.sanity - 3, 0, 100);
+    pushLog('跳过日理智低于 40，雪崩 -3。');
+  }
+  let eaten = 0, missed = 0;
+  MEAL_DEFS.forEach(function (m) {
+    if (p.money >= m.price) { p.money -= m.price; eaten++; }
+    else { p.health = clamp(p.health - 5, 0, 100); missed++; }
+  });
+  /* 与原餐饮结算一致：吃满三餐累计连吃天数，每 3 天生命 +5 */
+  if (eaten === MEAL_DEFS.length) {
+    state.weekly.mealStreak = (state.weekly.mealStreak || 0) + 1;
+    if (state.weekly.mealStreak % 3 === 0) {
+      p.health = clamp(p.health + 5, 0, 100);
+      pushLog('跳过日连续 3 天吃满三餐：生命 +5。');
+    }
+  } else {
+    state.weekly.mealStreak = 0;
+  }
+  pushLog((absent ? '旷课日' : '请假休息') + '：体力 +30' + (absent ? '' : '，理智 +5') +
+    '，自动用餐 ' + eaten + ' 餐' + (missed ? '，漏餐 ' + missed + ' 顿（生命 -' + (5 * missed) + '）' : '') + '。');
+  if (p.health <= 0) { endGame('D', absent ? '旷课期间生命归零' : '请假期间生命归零'); return; }
+  saveGame();
+  const t = state.time;
+  if (p.restSkipDays <= 0) { p.skipMode = null; p.skipClassNextDay = false; p.skipClassReason = null; }
+  if (t.week <= 9 && t.dayOfWeek === 5) { settleWeek(); return; }
+  if (t.week === 10 && t.dayOfWeek === 7) { showRetakeExam(); return; }
+  t.dayOfWeek++;
+  beginDay();
+}
+
+/* ---------- 周结算 ---------- */
+function settleWeek() {
+  const p = state.player;
+  const w = state.weekly;
+  const hadLate = w.hadLateNight;
+  p.money += 425;
+  let utilPaid = 0;
+  if (p.money >= 60) { p.money -= 60; utilPaid = 60; }
+  else { utilPaid = p.money; p.money = 0; }
+  let kitPaid = false;
+  if (p.money >= 40) { p.money -= 40; kitPaid = true; }
+  p.studyKitThisWeek = kitPaid;
+  let sleepGain = 0;
+  if (!hadLate) {
+    p.health = clamp(p.health + 8, 0, 100);
+    sleepGain = 8;
+  }
+  p.gameCountThisWeek = 0;
+  p.proxyCountThisWeek = 0;
+  p.highIntensityDays = 0;
+  w.hadLateNight = false;
+  w.gameProfGain = 0;
+  MAJOR_IDS.forEach(function (id) { w.profGain[id] = 0; });
+  ALL_IDS.forEach(function (id) { w.classCount[id] = 0; });
+
+  pushLog('周结算：生活费 +425，水电/交通 -' + utilPaid + '，资料费' +
+    (kitPaid ? '已缴 -40' : '未缴（下周复习收益减半）') +
+    (sleepGain ? '，周末补觉 +8 生命。' : '，当周有熬夜/通宵，未补觉。'));
+  ui.weekReport = {
+    week: state.time.week,
+    income: 425,
+    util: utilPaid,
+    kit: kitPaid,
+    sleep: sleepGain,
+    balance: p.money
+  };
+  ui.phase = 'weekly';
+  saveGame();
+  renderAll();
+}
+
+function continueWeekly() {
+  if (state.time.week === 9) { showExam(); return; }
+  state.time.week++;
+  state.time.dayOfWeek = 1;
+  const w = state.time.week;
+  if (w <= 9 && !state.schedule.grid[w]) state.schedule.grid[w] = generateGrid();
+  pushLog('第 ' + w + ' 周：系统随机生成本周课表。');
+  saveGame();
+  ui.editGrid = null;
+  ui.phase = 'schedule';
+  renderAll();
+}
+
+/* ---------- 崩溃 ---------- */
+function triggerCollapse(resumePhase) {
+  const p = state.player;
+  p.isCollapsed = true;
+  p.sanity = 0;
+  state.stats.collapseCount++;
+  pushLog('理智归零，进入崩溃状态：必须做出抉择。');
+  ui.collapseResume = resumePhase;
+  ui.phase = 'collapse';
+  renderAll();
+}
+
+function resolveCollapse(kind) {
+  const p = state.player;
+  if (kind === 'skip') {
+    p.restSkipDays = 3;
+    p.skipMode = 'absent';
+    p.skipClassNextDay = false;
+    p.skipClassReason = null;
+    MAJOR_IDS.forEach(function (id) { addProf(id, -3, { weeklyCap: false }); });
+    p.sanity = clamp(p.sanity + 50, 0, 100);
+    p.isCollapsed = false;
+    pushLog('崩溃抉择：旷课 3 天。全科熟练度 -3，理智 +50（不消耗请假）。');
+  } else {
+    if (p.leaveCount <= 0) return;
+    p.leaveCount--;
+    p.restSkipDays = 2;
+    p.skipMode = 'rest';
+    p.sanity = clamp(p.sanity + 50, 0, 100);
+    p.isCollapsed = false;
+    pushLog('崩溃抉择：请假 2 天。消耗 1 次请假（剩余 ' + p.leaveCount + ' / 5），理智 +50。');
+  }
+  const resume = ui.collapseResume;
+  ui.collapseResume = null;
+  if (resume === 'finishDay') { finishDay(true); return; }
+  if (resume === 'beginEvent') { beginEvent(); return; }
+  if (resume === 'eventResult') { ui.phase = 'eventResult'; renderAll(); return; }
+  if (resume === 'freeTime') { ui.phase = 'freeTime'; renderAll(); return; }
+  ui.phase = 'dayStart';
+  renderAll();
+}
+
+/* ---------- 结束（阶段 4 扩展成绩明细） ---------- */
+function gradeRank(g) {
+  return ({ S: 7, A: 6, B: 5, C: 4, F: 3, D: 2 })[g] || 0;
+}
+
+function endGame(rating, reason, info) {
+  if (ui.phase === 'ending') return;
+  info = info || {};
+
+  /* 撑过天数按日历计算：1-9 周每周 5 天，第 10 周补考 7 天 */
+  function calendarDays() {
+    const t = state.time;
+    if (t.week === 10) return 45 + t.dayOfWeek;
+    return (t.week - 1) * 5 + t.dayOfWeek;
+  }
+
+  record.attempts = (record.attempts || 0) + 1;
+  if (!record.bestGrade || gradeRank(rating) > gradeRank(record.bestGrade)) record.bestGrade = rating;
+  if (info.avg && info.avg > record.bestAvgScore) record.bestAvgScore = info.avg;
+  if (state.player.runCount > record.bestRunCount) record.bestRunCount = state.player.runCount;
+  record.clearedAt = Date.now();
+  saveRecord();
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  ui.ending = {
+    rating: rating,
+    reason: reason,
+    days: calendarDays(),
+    info: info,
+    runCount: state.player.runCount,
+    collapseCount: state.stats.collapseCount || 0
+  };
+  ui.phase = 'ending';
+  renderAll();
+}
+
+function goTitle() {
+  ui.phase = 'title';
+  renderAll();
+}
+
+/* ============================================================
+   第 9 周期中考试 / 第 10 周补考 / 评级结算
+   ============================================================ */
+function calcExamScore(prof, sanity) {
+  let r = random() * 100;
+  if (sanity < 40) r = Math.max(0, r - 5);   // 文档 4.4：理智 <40 随机项 -5
+  return Math.round(clamp(prof * 0.7 + r * 0.3, 0, 100));
+}
+
+function calcPassRate(prof) {
+  const need = (60 - 0.7 * prof) / 0.3;
+  return Math.round(clamp(100 - need, 0, 100));
+}
+
+function rateClass(rate) {
+  return rate >= 80 ? 'green' : rate >= 50 ? 'gold' : 'red';
+}
+
+function examAvg(scores) {
+  const ids = Object.keys(scores);
+  if (!ids.length) return 0;
+  let sum = 0;
+  ids.forEach(function (id) { sum += scores[id]; });
+  return Math.round(sum / ids.length);
+}
+
+function examMax(scores) {
+  let m = 0;
+  Object.keys(scores).forEach(function (id) { if (scores[id] > m) m = scores[id]; });
+  return m;
+}
+
+function showExam() {
+  state.exam.pending = true;
+  state.exam.taken = false;
+  ui.phase = 'exam';
+  saveGame();
+  renderAll();
+}
+
+function takeExam() {
+  if (state.exam.taken) return;
+  const p = state.player;
+  const scores = {};
+  const failed = [];
+  MAJOR_IDS.forEach(function (id) {
+    scores[id] = calcExamScore(state.courses[id].prof, p.sanity);
+    if (scores[id] < 60) failed.push(id);
+  });
+  state.exam.taken = true;
+  state.exam.pending = false;
+  state.exam.scores = scores;
+  state.exam.failed = failed;
+  if (failed.length) {
+    p.sanity = clamp(p.sanity - 20 * failed.length, 0, 100);
+    pushLog('期中考试挂 ' + failed.length + ' 门，理智 -' + (20 * failed.length) + '。');
+  } else {
+    pushLog('期中考试 4 门全部及格。');
+  }
+  saveGame();
+  ui.phase = 'examResult';
+  renderAll();
+}
+
+function finishExamPass() {
+  const scores = state.exam.scores;
+  const avg = examAvg(scores);
+  let all85 = true, all60 = true;
+  MAJOR_IDS.forEach(function (id) {
+    if (scores[id] < 85) all85 = false;
+    if (scores[id] < 60) all60 = false;
+  });
+  let rating = 'B';
+  if (all85 && state.player.health >= 60) rating = 'S';
+  else if (all60 && avg >= 75) rating = 'A';
+  const label = { S: 'S · 学神', A: 'A · 稳过', B: 'B · 险过' }[rating];
+  endGame(rating, label + ' · 期中通关', { scores: scores, avg: avg, max: examMax(scores) });
+}
+
+function startRetakeWeek() {
+  const p = state.player;
+  state.time.week = 10;
+  state.time.dayOfWeek = 1;
+  state.time.phase = 'retakeWeek';
+  state.exam.enteredRetake = true;
+  p.money += 425;                         // 补考周额外发放 1 次生活费
+  if (p.money >= 100) p.money -= 100;     // 水电 60 + 资料 40
+  else p.money = 0;
+  p.studyKitThisWeek = true;
+  p.gameCountThisWeek = 0;
+  p.proxyCountThisWeek = 0;
+  p.highIntensityDays = 0;
+  state.weekly.hadLateNight = false;
+  state.weekly.mealStreak = 0;
+  state.weekly.gameProfGain = 0;
+  MAJOR_IDS.forEach(function (id) { state.weekly.profGain[id] = 0; });
+  ALL_IDS.forEach(function (id) { state.weekly.classCount[id] = 0; });
+  pushLog('进入第 10 周补考周：不上课，每天 5 个自由格；生活费 +425，固定支出 -100。');
+  ui.eventQueue = [];
+  ui.phase = 'dayStart';
+  saveGame();
+  renderAll();
+}
+
+function showRetakeExam() {
+  const p = state.player;
+  const failed = (state.exam.failed || []).slice();
+  const scores = {};
+  const decayed = {};
+  failed.forEach(function (id) {
+    state.courses[id].prof = clamp(state.courses[id].prof - 10, 0, 100); // 遗忘惩罚
+    decayed[id] = state.courses[id].prof;
+    scores[id] = calcExamScore(state.courses[id].prof, p.sanity);
+  });
+  state.exam.retakeTaken = true;
+  state.exam.retakeScores = scores;
+  state.exam.retakeDecayed = decayed;
+  saveGame();
+  ui.phase = 'retakeResult';
+  renderAll();
+}
+
+function finishRetake() {
+  const allScores = Object.assign({}, state.exam.scores, state.exam.retakeScores);
+  const stillFailed = (state.exam.failed || []).filter(function (id) {
+    return state.exam.retakeScores[id] < 60;
+  });
+  if (stillFailed.length === 0) {
+    endGame('C', 'C · 补考侠 · 补考通过', { scores: allScores, avg: examAvg(allScores), max: examMax(allScores) });
+  } else {
+    endGame('F', 'F · 退学 · 补考挂科', { scores: allScores, avg: examAvg(allScores), max: examMax(allScores) });
+  }
+}
+
+/* ---------- 流程面板 ---------- */
+function deltaText(n) { return (n > 0 ? '+' : '') + n; }
+
+function effectSummary(eff) {
+  if (!eff) return '';
+  const parts = [];
+  if (eff.stamina) parts.push('体' + deltaText(eff.stamina));
+  if (eff.health) parts.push('命' + deltaText(eff.health));
+  if (eff.sanity) parts.push('智' + deltaText(eff.sanity));
+  if (eff.gameProf) parts.push('游戏' + deltaText(eff.gameProf));
+  if (eff.money) parts.push('¥' + deltaText(eff.money));
+  if (eff.prof) {
+    const pr = eff.prof;
+    let name = '熟';
+    if (pr.course === 'all_major') name = '全科熟';
+    else if (pr.course === 'firstMajorToday') name = '首课熟';
+    else if (pr.course === 'choose') name = '自选课熟';
+    else if (COURSE_DEFS[pr.course]) name = COURSE_DEFS[pr.course].short + '熟';
+    parts.push(name + deltaText(pr.delta));
+  }
+  if (eff.runCount) parts.push('校园跑' + deltaText(eff.runCount));
+  if (eff.leaveCount) parts.push('请假' + deltaText(eff.leaveCount));
+  if (eff.flag) parts.push('解锁社团');
+  if (eff.skipToday) parts.push('今日课程全翘');
+  if (eff.skipNextDay) parts.push('次日课程全翘');
+  return parts.length ? parts.join(' · ') : '无直接数值变化';
+}
+
+function renderClassRun(c) {
+  const p = state.player;
+  const res = ui.classResults || [];
+  let rows = '';
+  res.forEach(function (r) {
+    if (r.skipped) {
+      rows += '<div class="day-slot"><div class="c red">今天全部课程缺席（旷课）。</div></div>';
+    } else if (r.free) {
+      rows += '<div class="day-slot"><div class="c dim">补考周：今天不上课，5 个自由格全部可安排。</div></div>';
+    } else if (r.exhaust) {
+      rows += '<div class="day-slot"><div class="c red">体力归零，当场昏睡，剩余行动全部跳过。</div></div>';
+    } else {
+      rows += '<div class="day-slot"><div class="t">' + SLOT_TIMES[r.slot] + '</div><div class="c">' +
+        COURSE_DEFS[r.id].name + ' <span class="tag">体力 -' + r.stamina +
+        (r.gain ? ' · 熟练度 +' + r.gain : ' · 公共课') + '</span></div></div>';
+    }
+  });
+  const nextLabel = state.day.exhausted ? '继续：餐饮结算' : '继续：今天的随机事件';
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>' + dayText(state.time.week, state.time.dayOfWeek) + ' · 上课结算</h2>' +
+    '<div class="day-list">' + rows + '</div>' +
+    '<div class="validate">' +
+    '<span>课上 ' + state.day.classesRun + ' 节</span>' +
+    '<span>体力 ' + Math.round(p.stamina) + '</span>' +
+    '<span>理智 ' + Math.round(p.sanity) + '</span>' +
+    '<span>' + (p.highIntensityDays >= 3 ? '连续高强度 ' + p.highIntensityDays + ' 天' : '强度正常') + '</span>' +
+    '</div>' +
+    '<div class="action-row">' +
+    '<button class="btn gold big" onclick="' + (state.day.exhausted ? 'enterMeals()' : 'beginEvent()') + '">' + nextLabel + '</button>' +
+    '</div>' +
+    '</div>';
+}
+
+function categoryLabel(cat) {
+  return ({ life: '日常', course: '课程', social: '社交', risky: '心理', milestone: '里程碑' })[cat] || '事件';
+}
+
+function renderEvent(c) {
+  const ev = ui.currentEvent;
+  if (!ev) { c.innerHTML = ''; return; }
+  let opts = '';
+  ev.options.forEach(function (o, i) {
+    if (o.risky && state.player.sanity >= 40) return;
+    const risky = o.risky ? '<span class="red">[高风险] </span>' : '';
+    opts += '<div style="margin-top:8px">' +
+      '<button class="btn" style="width:100%;text-align:left;display:block" onclick="chooseOption(' + i + ')">' +
+      risky + o.text +
+      '<br><span class="dim" style="font-size:11px">' + effectSummary(o.effects) +
+      (o.chance ? ' · 有概率失败' : '') + '</span>' +
+      '</button></div>';
+  });
+  let lowOpts = '';
+  if (state.player.sanity < 40) {
+    lowOpts =
+      '<h3 style="color:var(--hp)">理智衰弱 · 低理智专属</h3>' +
+      '<div class="action-row" style="flex-direction:column;align-items:stretch">' +
+      '<button class="btn" style="text-align:left;border-color:var(--hp)" onclick="chooseLowSanity(\'desperate\')">' +
+      '<span class="red">[高风险] </span>豁出去了' +
+      '<br><span class="dim" style="font-size:11px">熟(自选课) +10 · 命 -12 · 智 -5</span></button>' +
+      (canSlackToday() ?
+        '<button class="btn" style="text-align:left;border-color:var(--hp)" onclick="chooseLowSanity(\'slack\')">' +
+        '<span class="red">[高风险] </span>翘课回宿舍躺平' +
+        '<br><span class="dim" style="font-size:11px">智 +18 · 体 +20 · 当天剩余课程全翘（熟练度 -5/节）</span></button>' : '') +
+      (examSoon() ?
+        '<button class="btn" style="text-align:left;border-color:var(--hp)" onclick="chooseLowSanity(\'grind\')">' +
+        '<span class="red">[高风险] </span>通宵突击' +
+        '<br><span class="dim" style="font-size:11px">该科熟练度 +15 · 命 -15 · 智 -10 · 次日体力上限 -20</span></button>' : '') +
+      '</div>';
+  }
+  c.innerHTML =
+    '<div class="panel">' +
+    '<div class="validate" style="margin:0 0 8px"><span class="gold">【' + categoryLabel(ev.category) + '】</span>' +
+    '<span class="dim">' + ev.id + '</span>' +
+    (state.player.sanity < 40 ? '<span class="red">理智衰弱：随机项 -5</span>' : '') + '</div>' +
+    '<h2 style="border-bottom:none">' + ev.title + '</h2>' +
+    '<p style="margin-bottom:10px">' + ev.description + '</p>' +
+    opts +
+    lowOpts +
+    '</div>';
+}
+
+function renderEventResult(c) {
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>结果</h2>' +
+    '<p class="' + (ui.eventResultFailed ? 'red' : '') + '">' + (ui.eventResultText || '') + '</p>' +
+    '<div class="validate"><span>体力 ' + Math.round(state.player.stamina) + '</span>' +
+    '<span>生命 ' + Math.round(state.player.health) + '</span>' +
+    '<span>理智 ' + Math.round(state.player.sanity) + '</span>' +
+    '<span>¥' + state.player.money + '</span></div>' +
+    '<div class="action-row"><button class="btn gold big" onclick="continueEvent()">继续</button></div>' +
+    '</div>';
+}
+
+function renderChooseCourse(c) {
+  let btns = '';
+  MAJOR_IDS.forEach(function (id) {
+    btns += '<button class="btn" onclick="chooseCourseFor(\'' + id + '\')">' + state.courses[id].name +
+      '（熟练 ' + Math.round(state.courses[id].prof) + '）</button>';
+  });
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>选择复习 / 受益的课程</h2>' +
+    '<p class="dim" style="font-size:12px">该事件效果作用于你选择的一门专业课。</p>' +
+    '<div class="action-row">' + btns + '</div>' +
+    '</div>';
+}
+
+function reviewBlocked(courseId) {
+  const d = state.day;
+  if (d.freeSlotsLeft <= 0) return true;
+  if ((d.reviewsByCourse[courseId] || 0) >= 2) return true;
+  if (d.skippedCourses.indexOf(courseId) >= 0) return true;
+  return effectiveReviewGain(courseId) <= 0;
+}
+
+/* 复习按钮不可用时的原因（避免静默失败） */
+function reviewBlockedReason(courseId) {
+  const d = state.day;
+  if (!d) return '未在自由时间';
+  if (d.freeSlotsLeft <= 0) return '无自由格';
+  if ((d.reviewsByCourse[courseId] || 0) >= 2) return '本日已 2 格';
+  if (d.skippedCourses.indexOf(courseId) >= 0) return '当天翘课';
+  if (effectiveReviewGain(courseId) <= 0) return '本周已 +16';
+  return '';
+}
+
+function renderFreeTime(c) {
+  const d = state.day;
+  const p = state.player;
+  const t = state.time;
+  const noSlots = d.freeSlotsLeft <= 0;
+  const capReason = gameProfCapReason();
+  let reviewBtns = '';
+  MAJOR_IDS.forEach(function (id) {
+    const gain = effectiveReviewGain(id);
+    const blocked = reviewBlockedReason(id);
+    reviewBtns += '<button class="btn small" ' + (blocked ? 'disabled' : '') +
+      ' onclick="doFreeAction(\'review\',\'' + id + '\')">复习' + COURSE_DEFS[id].short +
+      (blocked ? '（' + blocked + '）' : ' +' + gain) + '</button>';
+  });
+  const socialNote = t.week < 5 ? '（第5周解锁）' : (p.money < 15 ? '（需 ¥15）' : '');
+  const coopNote = p.gameProf < 40 ? '（需熟练≥40）' : (p.money < 10 ? '（需 ¥10）' : '');
+  const boostNote = (p.proxyCountThisWeek || 0) >= 2 ? '（本周已达2次）' :
+    (p.gameProf < 70 ? '（需熟练≥70）' : '');
+  const dis = noSlots ? 'disabled' : '';
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>' + dayText(t.week, t.dayOfWeek) + ' · 自由时间</h2>' +
+    '<div class="validate" style="margin-bottom:4px">' +
+    '<span class="ok">剩余自由格 ' + d.freeSlotsLeft + '</span>' +
+    '<span>体力 ' + Math.round(p.stamina) + '</span><span>理智 ' + Math.round(p.sanity) + '</span>' +
+    '<span>游戏 ' + Math.round(p.gameProf || 0) + '</span>' +
+    '<span>¥' + p.money + '</span>' +
+    (p.studyKitThisWeek ? '' : '<span class="red">资料费未缴：复习收益减半</span>') +
+    (noSlots ? '<span class="red">自由格已用完，请结束自由时间</span>' :
+      (capReason ? '<span class="red">' + capReason + '（打游戏仍可回理智）</span>' : '')) +
+    '</div>' +
+    '<h3>复习（1 格）</h3>' +
+    '<div class="action-row">' + reviewBtns + '</div>' +
+    '<h3>行动（每项 1 格）</h3>' +
+    '<div class="action-row">' +
+    '<button class="btn small" ' + dis + ' onclick="doFreeAction(\'rest\')">平时休息 +12体 +4智</button>' +
+    '<button class="btn small" ' + dis + ' onclick="doFreeAction(\'nap\')">午睡 +20体 +3智</button>' +
+    '<button class="btn small" ' + (noSlots || d.runToday >= 1 ? 'disabled' : '') +
+    ' onclick="doFreeAction(\'run\')">校园跑 -8体 +3智（' + p.runCount + '/50）' + (d.runToday >= 1 ? '（今日已跑）' : '') + '</button>' +
+    '<button class="btn small" ' + dis + ' onclick="doFreeAction(\'work\')">兼职 +¥50 -10体 -4智</button>' +
+    '<button class="btn small" ' + (noSlots || t.week < 5 || p.money < 15 ? 'disabled' : '') +
+    ' onclick="doFreeAction(\'social\')">社团/社交 +10智 -¥15' + socialNote + '</button>' +
+    '<button class="btn small" ' + dis + ' onclick="doFreeAction(\'game\')">打游戏 -5体 ' +
+    (p.gameCountThisWeek === 0 ? '+8' : p.gameCountThisWeek === 1 ? '+5' : '+1') + '智 ' +
+    (capReason ? '熟练已满' : '+6游戏') + '</button>' +
+    '<button class="btn small" ' + (noSlots || p.gameProf < 40 || p.money < 10 ? 'disabled' : '') +
+    ' onclick="doFreeAction(\'coop\')">开黑 +22智 -6体 -¥10' + coopNote + '</button>' +
+    '<button class="btn small" ' + (noSlots || p.gameProf < 70 || (p.proxyCountThisWeek || 0) >= 2 ? 'disabled' : '') +
+    ' onclick="doFreeAction(\'boost\')">代练 +¥45 -12体 -3智' + boostNote + '</button>' +
+    '</div>' +
+    '<p class="hint">规则：同门课每天最多复习 2 格；当天翘掉的课当天不能复习；单门课每周熟练度总收益上限 +16；校园跑每天最多 1 次。' +
+    '游戏熟练每周最多 +18（周一重置），开黑需 40，代练需 70。' +
+    (t.week === 10 ? '补考周复习收益：第 1/2/3/4 天分别为 +6/+4/+2/+1。' : '') + '</p>' +
+    '<div class="action-row"><button class="btn gold" onclick="enterMeals()">结束自由时间 → 餐饮</button></div>' +
+    '</div>';
+}
+
+function renderMeals(c) {
+  const p = state.player;
+  let rows = '';
+  MEAL_DEFS.forEach(function (m) {
+    const plan = ui.mealPlan ? ui.mealPlan[m.id] : 'eat';
+    const canPay = p.money >= m.price;
+    let status;
+    if (plan === 'eat') {
+      status = canPay ? '<span class="green">吃（支付 ¥' + m.price + '）</span>' :
+        '<span class="red">余额不足：将自动漏餐（生命 -5）</span>';
+    } else {
+      status = '<span class="red">省餐（生命 -5）</span>';
+    }
+    rows += '<div class="day-slot"><div class="t">' + m.name + '</div><div class="c">¥' + m.price +
+      ' · ' + status + '</div><button class="btn small" onclick="toggleMeal(\'' + m.id + '\')">切换</button></div>';
+  });
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>餐饮结算</h2>' +
+    '<div class="day-list">' + rows + '</div>' +
+    '<div class="validate"><span>余额 ¥' + p.money + '</span><span>生命 ' + Math.round(p.health) + '</span>' +
+    '<span class="dim">吃饭不回体力</span></div>' +
+    '<div class="action-row"><button class="btn gold big" onclick="confirmMeals()">确认餐饮</button></div>' +
+    '</div>';
+}
+
+/* 夜间熬夜复习 / 通宵突击的该科实际可得熟练度（受 100 与单科周 +16 限制） */
+function nightProfGain(courseId, base) {
+  const c = state.courses[courseId];
+  if (!c) return 0;
+  let room = 99;
+  if (state.time.week !== 10) room = 16 - (state.weekly.profGain[courseId] || 0);
+  return Math.max(0, Math.min(base, room, 100 - (c.prof || 0)));
+}
+
+function renderNight(c) {
+  const p = state.player;
+  const capReason = gameProfCapReason();
+  let studyBtns = '', grindBtns = '';
+  MAJOR_IDS.forEach(function (id) {
+    const g1 = nightProfGain(id, 7);
+    const g2 = nightProfGain(id, 15);
+    studyBtns += '<button class="btn small" ' + (g1 <= 0 ? 'disabled' : '') +
+      ' onclick="doNight(\'lateStudy\',\'' + id + '\')">' + COURSE_DEFS[id].short +
+      (g1 > 0 ? ' +' + g1 : '（已满）') + '</button>';
+    grindBtns += '<button class="btn small" ' + (g2 <= 0 ? 'disabled' : '') +
+      ' onclick="doNight(\'allStudy\',\'' + id + '\')">' + COURSE_DEFS[id].short +
+      (g2 > 0 ? ' +' + g2 : '（已满）') + '</button>';
+  });
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>夜间作息</h2>' +
+    '<p class="dim" style="font-size:12px">体力只能靠休息恢复。选择今晚的作息：</p>' +
+    (capReason ? '<p class="hint"><span class="red">' + capReason +
+      '（熬夜打游戏仍可回体力/理智）</span></p>' : '') +
+    '<div class="action-row" style="flex-direction:column;align-items:stretch">' +
+    '<button class="btn stack" onclick="doNight(\'sleep\')"><span>睡觉 ≥8 小时</span>' +
+    '<span class="eff">体力 +30，不扣生命（最稳）</span></button>' +
+    '<button class="btn stack" onclick="doNight(\'lateGame\')"><span>熬夜打游戏</span>' +
+    '<span class="eff">体力 +10，生命 -8，理智 +8，游戏熟练 +5</span></button>' +
+    '<div class="day-slot night-block" style="margin-top:6px"><div class="c">熬夜复习：体力 +10，生命 -8，理智 -5，选一门专业课熟练度 +7</div>' +
+    '<div class="action-row">' + studyBtns + '</div></div>' +
+    '<div class="day-slot night-block" style="margin-top:6px"><div class="c">通宵突击：体力 +0，生命 -15，理智 -10，选一门专业课熟练度 +15</div>' +
+    '<div class="action-row">' + grindBtns + '</div></div>' +
+    '</div>' +
+    '<p class="hint">课程按钮显示本次实际可得熟练度；「已满」表示该科本周 +16 已用尽或熟练度已到 100。</p>' +
+    '<div class="validate"><span>当前体力 ' + Math.round(p.stamina) + '</span>' +
+    '<span>生命 ' + Math.round(p.health) + '</span><span>理智 ' + Math.round(p.sanity) + '</span></div>' +
+    '</div>';
+}
+
+function renderDayEnd(c) {
+  const s = ui.daySummary;
+  if (!s) { c.innerHTML = ''; return; }
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>' + s.title + ' · 日结算</h2>' +
+    '<div class="validate" style="font-size:13px;line-height:2">' +
+    '<span>体力 ' + deltaText(s.stamina) + ' → ' + Math.round(s.staminaNow) + '</span>' +
+    '<span>生命 ' + deltaText(s.health) + ' → ' + Math.round(s.healthNow) + '</span>' +
+    '<span>理智 ' + deltaText(s.sanity) + ' → ' + Math.round(s.sanityNow) + '</span>' +
+    '<span>金钱 ' + deltaText(s.money) + ' → ¥' + s.moneyNow + '</span>' +
+    '</div>' +
+    '<p class="hint">用餐 ' + s.meals + ' 顿' + (s.missed ? '，漏餐 ' + s.missed + ' 顿（生命 -' + (s.missed * 5) + '）' : '') +
+    (s.exhausted ? '；体力归零，当天剩余行动被跳过。' : '') + '</p>' +
+    '<div class="action-row"><button class="btn gold big" onclick="continueDay()">' +
+    (state.time.week === 10 && state.time.dayOfWeek === 7 ? '继续：补考' :
+      (state.time.dayOfWeek === 5 ? '继续：周结算' : '继续：下一天')) + '</button></div>' +
+    '</div>';
+}
+
+function renderWeekly(c) {
+  const r = ui.weekReport;
+  if (!r) { c.innerHTML = ''; return; }
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>第 ' + r.week + ' 周 · 周结算</h2>' +
+    '<div style="font-size:13px;line-height:2.2">' +
+    '生活费到账 <span class="gold">+¥425</span><br>' +
+    '水电 / 交通 <span class="red">-¥' + r.util + '</span><br>' +
+    '学习资料 / 打印 ' + (r.kit ? '<span class="red">-¥40</span>（已缴，下周复习全额）' : '<span class="red">未缴</span>，下周复习收益减半（+4 → +2）') + '<br>' +
+    '周末补觉 ' + (r.sleep ? '<span class="green">+8 生命</span>' : '<span class="dim">当周有熬夜/通宵，未触发</span>') + '<br>' +
+    '当前余额 <span class="gold">¥' + r.balance + '</span>' +
+    '</div>' +
+    '<p class="hint">校园跑累计 ' + state.player.runCount + ' / 50 · 请假剩余 ' + state.player.leaveCount + ' 次</p>' +
+    '<div class="action-row"><button class="btn gold big" onclick="continueWeekly()">' +
+    (state.time.week === 9 ? '继续：期中考试' : '继续：排下周课表') + '</button></div>' +
+    '</div>';
+}
+
+function renderCollapse(c) {
+  const p = state.player;
+  c.innerHTML =
+    '<div class="panel" style="border-color:var(--danger)">' +
+    '<h2 style="color:var(--danger)">理智崩溃</h2>' +
+    '<p>你盯着屏幕，脑子里的声音终于停了下来。必须做出抉择：</p>' +
+    '<div class="action-row" style="flex-direction:column;align-items:stretch;margin-top:10px">' +
+    '<button class="btn" style="text-align:left" onclick="resolveCollapse(\'skip\')">a) 旷课 3 天：跳过 3 天（自动扣三餐与理智雪崩），全科熟练度 -3；理智 +50（不消耗请假）</button>' +
+    '<button class="btn" style="text-align:left" ' + (p.leaveCount <= 0 ? 'disabled' : '') + ' onclick="resolveCollapse(\'leave\')">b) 请假 2 天：跳过 2 个回合按休息结算；理智 +50，消耗 1 次请假（剩余 ' + p.leaveCount + ' / 5）' + (p.leaveCount <= 0 ? '（请假次数已用完）' : '') + '</button>' +
+    '</div>' +
+    '<p class="hint">崩溃本身不直接失败，但会连锁影响熟练度与进度。</p>' +
+    '</div>';
+}
+
+function renderExam(c) {
+  const p = state.player;
+  let rows = '';
+  let lowCount = 0;
+  MAJOR_IDS.forEach(function (id) {
+    const course = state.courses[id];
+    const rate = calcPassRate(course.prof);
+    if (rate < 60) lowCount++;
+    rows += '<div class="day-slot"><div class="t">' + COURSE_DEFS[id].short + '</div>' +
+      '<div class="c">' + course.name + ' · 熟练度 ' + Math.round(course.prof) +
+      ' <span class="' + rateClass(rate) + '">预估通过率 ' + rate + '%</span></div></div>';
+  });
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>第 9 周结束 · 期中考试</h2>' +
+    '<p class="dim" style="font-size:12px">成绩 = 熟练度 × 70% + 随机(0-100) × 30%，≥60 及格；理智 &lt; 40 时随机项 -5。</p>' +
+    '<div class="day-list">' + rows + '</div>' +
+    '<div class="validate"><span>当前理智 ' + Math.round(p.sanity) + '</span>' +
+    '<span>生命 ' + Math.round(p.health) + '</span>' +
+    (lowCount ? '<span class="red">有 ' + lowCount + ' 门预估通过率 &lt; 60%，是否还有最后几天补复习？</span>' : '<span class="green">四门预估均可一搏</span>') +
+    '</div>' +
+    '<div class="action-row"><button class="btn gold big" onclick="takeExam()">开考</button></div>' +
+    '</div>';
+}
+
+function renderExamResult(c) {
+  const scores = state.exam.scores || {};
+  const failed = state.exam.failed || [];
+  let rows = '';
+  MAJOR_IDS.forEach(function (id) {
+    const s = scores[id];
+    const pass = s >= 60;
+    rows += '<div class="day-slot"><div class="t">' + COURSE_DEFS[id].short + '</div>' +
+      '<div class="c">' + state.courses[id].name + ' <span class="' + (pass ? 'green' : 'red') + '">' +
+      s + ' 分 · ' + (pass ? '及格' : '挂科') + '</span></div></div>';
+  });
+  const avg = examAvg(scores);
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>期中成绩</h2>' +
+    '<div class="day-list">' + rows + '</div>' +
+    '<div class="validate"><span>平均 ' + avg + ' 分</span><span>最高 ' + examMax(scores) + ' 分</span>' +
+    '<span class="' + (failed.length ? 'red' : 'green') + '">' + (failed.length ? '挂科 ' + failed.length + ' 门' : '四门全过') + '</span></div>' +
+    (failed.length ? '<p class="hint">挂科每门理智 -20；已进入第 10 周补考周（7 天、复习收益 +6/+4/+2/+1、补考熟练度先 -10）。</p>' :
+      '<p class="hint">四门全部及格，进入通关结算。</p>') +
+    '<div class="action-row"><button class="btn gold big" onclick="' +
+    (failed.length ? 'startRetakeWeek()' : 'finishExamPass()') + '">' +
+    (failed.length ? '进入第 10 周补考' : '查看结算') + '</button></div>' +
+    '</div>';
+}
+
+function renderRetakeResult(c) {
+  const scores = state.exam.retakeScores || {};
+  const decayed = state.exam.retakeDecayed || {};
+  let rows = '';
+  let stillFailed = 0;
+  (state.exam.failed || []).forEach(function (id) {
+    const s = scores[id];
+    const pass = s >= 60;
+    if (!pass) stillFailed++;
+    rows += '<div class="day-slot"><div class="t">' + COURSE_DEFS[id].short + '</div>' +
+      '<div class="c">' + state.courses[id].name + ' · 补考熟练度 ' + Math.round(decayed[id] || 0) +
+      ' <span class="' + (pass ? 'green' : 'red') + '">' + s + ' 分 · ' + (pass ? '通过' : '仍未及格') + '</span></div></div>';
+  });
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>第 10 周 · 补考成绩</h2>' +
+    '<div class="day-list">' + rows + '</div>' +
+    '<div class="validate"><span class="' + (stillFailed ? 'red' : 'green') + '">' +
+    (stillFailed ? '仍有 ' + stillFailed + ' 门不及格' : '补考全部通过') + '</span></div>' +
+    '<p class="hint">' + (stillFailed ? '补考仅 1 次机会，挂科即游戏失败。' : '补考通过，进入结算。') + '</p>' +
+    '<div class="action-row"><button class="btn gold big" onclick="finishRetake()">查看结算</button></div>' +
+    '</div>';
+}
+
+function renderEnding(c) {
+  const e = ui.ending;
+  if (!e) { c.innerHTML = ''; return; }
+  const info = e.info || {};
+  let scoreRows = '';
+  if (info.scores) {
+    MAJOR_IDS.forEach(function (id) {
+      const s = info.scores[id];
+      if (s === undefined) return;
+      scoreRows += '<div class="day-slot"><div class="t">' + COURSE_DEFS[id].short + '</div>' +
+        '<div class="c">' + state.courses[id].name + ' <span class="' + (s >= 60 ? 'green' : 'red') + '">' + s + ' 分</span></div></div>';
+    });
+  }
+  c.innerHTML =
+    '<div class="panel" style="text-align:center">' +
+    '<div style="font-size:40px;color:var(--gold);text-shadow:4px 4px 0 #000;margin:10px 0">' + e.rating + '</div>' +
+    '<h2 style="border-bottom:none">' + e.reason + '</h2>' +
+    '<div class="validate" style="justify-content:center">' +
+    '<span>撑过 ' + e.days + ' 天</span>' +
+    (info.avg !== undefined ? '<span>平均 ' + info.avg + ' 分</span>' : '') +
+    (info.max !== undefined ? '<span>最高单科 ' + info.max + ' 分</span>' : '') +
+    '<span>校园跑 ' + e.runCount + ' 次</span>' +
+    '<span>崩溃 ' + e.collapseCount + ' 次</span>' +
+    '</div>' +
+    (scoreRows ? '<div class="day-list" style="margin-top:10px;text-align:left">' + scoreRows + '</div>' : '') +
+    '<p class="hint" style="margin-top:10px">评级：S 学神 / A 稳过 / B 险过 / C 补考侠 / F 退学 / D 倒下</p>' +
+    '<div class="action-row" style="justify-content:center;margin-top:12px">' +
+    '<button class="btn gold" onclick="startNewGame()">再来一局</button>' +
+    '<button class="btn" onclick="goTitle()">返回标题</button>' +
+    '</div></div>';
+}
+
+/* ========= 开局 / 继续 ========= */
+function startNewGame() {
+  if (localStorage.getItem(SAVE_KEY)) {
+    if (!confirm('已有进行中的存档，开始新游戏会覆盖它。确定继续？')) return;
+  }
+  record = loadRecord();
+  const seed = Math.floor(Math.random() * 2147483647);
+  initRng(seed);
+  state = createState(seed);
+  state.records = clone(record);
+  ui.ending = null;
+  pushLog('开学第一天：你拖着行李箱站在宿舍楼下。');
+  pushLog('生活费到账 ¥425，第 1 周课表由系统随机生成。');
+  ui.editGrid = null;
+  ui.phase = 'schedule';
+  saveGame();
+  renderAll();
+}
+
+function continueGame() {
+  const s = loadGame();
+  if (!s) { alert('没有找到可用的存档。'); ui.phase = 'title'; renderAll(); return; }
+  state = s;
+  initRuntime();
+  initRng(state.meta.seed || 1);
+  ui.phase = 'dayStart';
+  const ex = state.exam || {};
+  if (ex.enteredRetake) {
+    ui.phase = ex.retakeTaken ? 'retakeResult' : 'dayStart';
+  } else if (ex.pending && !ex.taken) {
+    ui.phase = 'exam';
+  } else if (ex.taken) {
+    ui.phase = 'examResult';
+  }
+  if (!state.day || state.day.freeSlotsLeft === 0) {
+    // 恢复时重算当天自由槽
+    const grid = state.time.week === 10 ? [null, null, null, null, null] : todayGrid();
+    state.day.freeSlotsLeft = 5 - grid.filter(Boolean).length;
+  }
+  renderAll();
+}
+
+/* ========= 启动 ========= */
+record = loadRecord();
+renderAll();
+</script>
+</body>
+</html>
