@@ -66,6 +66,7 @@
   .stat:hover .tip{opacity:1;transform:translateX(-50%) translateY(0);}
   .stat .head{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--dim);}
   .stat .head b{font-size:18px;font-weight:normal;color:var(--text);}
+  .stat-state{display:none;font-size:10px;color:var(--dim);text-align:right;line-height:1.4;}
   .bar{display:flex;gap:1px;border:2px solid var(--line);background:var(--dark);padding:2px;height:16px;margin-top:2px;}
   .bar i{flex:1;background:#33334A;}
   .bar i.on.stam{background:var(--stam);}
@@ -107,6 +108,38 @@
   .mini-bar i{flex:1;background:#33334A;}
   .mini-bar i.on{background:var(--gold);}
   .side-info{border-top:2px solid var(--line);margin-top:8px;padding-top:8px;font-size:12px;line-height:1.9;}
+  .course-nums{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;margin-top:8px;font-size:12px;}
+  .course-nums .cn{display:flex;justify-content:space-between;color:var(--dim);}
+  .course-nums .cn b{color:var(--text);font-weight:normal;}
+  /* 道具背包 / 商店 */
+  .bag-btn{background:#006FFF;border:2px solid #003f99;color:#fff;font-family:inherit;font-size:13px;padding:6px 12px;cursor:pointer;box-shadow:2px 2px 0 #000;align-self:center;display:inline-flex;align-items:center;gap:6px;letter-spacing:1px;white-space:nowrap;}
+  .bag-btn:hover{background:#1a7fff;border-color:#0050cc;}
+  .bag-btn:active{transform:translate(2px,2px);box-shadow:none;}
+  .bag-modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:9998;padding:16px;}
+  .bag-modal.show{display:flex;}
+  .bag-box{background:var(--panel);border:2px solid #000;box-shadow:0 0 0 2px var(--line),6px 6px 0 #000;padding:16px;max-width:440px;width:100%;max-height:90vh;overflow:auto;}
+  .bag-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .bag-head span:first-child{font-size:15px;color:var(--gold);}
+  .bag-head #bag-cap{font-size:12px;margin-left:auto;}
+  .bag-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .bag-slot{aspect-ratio:1;border:2px solid var(--line);background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-size:11px;color:var(--text);text-align:center;padding:4px;}
+  .bag-slot.empty{opacity:.35;cursor:default;}
+  .bag-slot .icon{font-size:20px;line-height:1;}
+  .bag-slot .nm{line-height:1.2;}
+  .bag-detail{margin-top:10px;border-top:2px solid var(--line);padding-top:10px;min-height:44px;}
+  .item-detail-head{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--gold);}
+  .item-detail-head .icon{font-size:20px;}
+  .item-detail-desc{font-size:12px;color:var(--text);margin-top:6px;line-height:1.6;}
+  .shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:12px 0;}
+  .shop-card{border:2px solid var(--line);background:var(--dark);padding:10px;display:flex;flex-direction:column;gap:4px;}
+  .shop-icon{font-size:24px;line-height:1;}
+  .shop-name{font-size:14px;color:var(--text);}
+  .shop-desc{font-size:11px;color:var(--dim);}
+  .shop-price{font-size:12px;color:var(--gold);margin-top:auto;}
+  .mode-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:12px 0;}
+  .mode-card{border:2px solid var(--line);background:var(--dark);padding:12px;display:flex;flex-direction:column;gap:6px;}
+  .mode-name{font-size:15px;color:var(--gold);}
+  .mode-desc{font-size:12px;color:var(--dim);line-height:1.6;flex:1;}
   .side-info b{color:var(--gold);font-weight:normal;}
   /* ---------- 按钮 ---------- */
   .btn{
@@ -241,6 +274,9 @@
     #sidebar{flex-direction:row;flex-wrap:wrap;width:100%;}
     #sidebar .panel{flex:1 1 100%;}
     .stat{min-width:104px;}
+    /* 触屏没有 hover：隐藏绝对定位提示（原先 nowrap 会撑宽布局视口），改用常驻状态字 */
+    .stat .tip,.money-chip .tip{display:none;}
+    .stat-state{display:block;}
     .title-screen .logo{font-size:24px;letter-spacing:3px;}
   }
   @media (max-width:480px){
@@ -254,6 +290,7 @@
     .stat{flex:1 1 0;min-width:0;}
     .stat .head{font-size:10px;}
     .stat .head b{font-size:14px;}
+    .stat-state{font-size:9px;}
     .bar{height:12px;}
     .money-chip{font-size:13px;padding:2px 6px;margin-left:4px;}
     main{padding:6px;gap:8px;}
@@ -294,12 +331,14 @@
     <div class="brand">大学生活模拟器<span class="ver">DEMO v0.1 · 像素生存</span></div>
     <div id="clock" class="clock">未开始</div>
     <div id="stats" class="stats"></div>
+    <button id="bag-btn" class="bag-btn" onclick="openBag()" title="背包" aria-label="打开背包">🎒 背包</button>
   </header>
   <main>
     <aside id="sidebar">
       <div class="panel">
         <h2>课程熟练度</h2>
         <div id="chart-radar" class="s-chart" style="height:180px"></div>
+        <div class="course-nums" id="course-nums"></div>
         <div class="side-info" id="side-info"></div>
       </div>
       <div class="panel">
@@ -321,6 +360,14 @@
 </div>
 
 <div id="ach-toast" role="status" aria-live="polite"></div>
+
+<div id="bag-modal" class="bag-modal" onclick="if(event.target===this)closeBag()">
+  <div class="bag-box">
+    <div class="bag-head"><span>🎒 背包</span><span id="bag-cap" class="dim"></span><button class="btn small" onclick="closeBag()">关闭</button></div>
+    <div class="bag-grid" id="bag-grid"></div>
+    <div id="bag-detail" class="bag-detail"><p class="hint">点击道具查看效果与使用。</p></div>
+  </div>
+</div>
 
 <script>
 /* ============================================================
@@ -354,10 +401,39 @@ const MEAL_DEFS = [
 ];
 const CYCLE_COURSES = [null, 'java', 'web', 'db', 'android', 'politics', 'startup', 'pe'];
 
+/* ========= 道具与商店 ========= */
+const BAG_CAP = 8;
+const ITEMS = {
+  energy: { id:'energy', name:'功能饮料',   icon:'⚡', price:35,  desc:'体力 +25', type:'stamina', value:25 },
+  heart:  { id:'heart',  name:'速效救心丸', icon:'❤', price:70,  desc:'生命 +20', type:'health',  value:20 },
+  calm:   { id:'calm',   name:'心境稳定剂', icon:'🧠', price:40,  desc:'理智 +15', type:'sanity',  value:15 },
+  paper:  { id:'paper',  name:'押题卷',     icon:'📝', price:60,  desc:'指定一科熟练度 +10', type:'prof', value:10 },
+  leave:  { id:'leave',  name:'请假条',     icon:'📋', price:50,  desc:'请假次数 +1（上限 5）', type:'leave', value:1 },
+  totem:  { id:'totem',  name:'不死图腾',   icon:'🗿', price:150, desc:'生命归零时自动保命 1 次', type:'totem', value:0 }
+};
+const SHOP_ORDER = ['energy', 'heart', 'calm', 'paper', 'leave', 'totem'];
+const SHOP_WEEK_LIMIT = { energy: 2, heart: 2, calm: 2, paper: 1, leave: 1, totem: 1 };
+
+/* ========= 开局模式（路线天赋，数值小幅增减） ========= */
+const MODES = {
+  scholar: { id:'scholar', name:'学霸',     desc:'复习消耗理智 -1；初始体力 -10' },
+  social:  { id:'social',  name:'社牛',     desc:'社交/开黑回理智 +6；复习消耗理智 +1' },
+  contest: { id:'contest', name:'竞赛',     desc:'初始随机一门专业课 +8；初始金钱 -60' },
+  slacker: { id:'slacker', name:'摆烂',     desc:'打游戏回理智 +4；复习消耗理智 +1' },
+  free:    { id:'free',    name:'自由模式', desc:'没有任何被动或惩罚，全靠自己努力' }
+};
+const MODE_MODS = {
+  scholar: { reviewSanityAdj: -1, startStamina: -10 },
+  social:  { reviewSanityAdj: 1, socialBonus: 6 },
+  contest: { startMoney: -60, startProf: 8 },
+  slacker: { reviewSanityAdj: 1, gameBonus: 4 },
+  free:    {}
+};
+
 /* ========= 全局状态 ========= */
 let state = null;
 let record = { bestGrade: null, bestAvgScore: 0, bestRunCount: 0, clearedAt: 0, attempts: 0 };
-let ui = { phase: 'title' };
+let ui = { phase: 'title', autoClass: false };
 
 /* ========= 成就系统 ========= */
 const ACH_KEY = 'dslr_ach_v1';
@@ -376,7 +452,23 @@ const ACHIEVEMENTS = [
   { id:'sunny',      name:'阳光开朗大男孩',  desc:'整局理智从未低于 20 并通关',       check:function(){ return ui.ending && ui.ending.rating !== 'D' && !state.flags.sanityBelow20; } },
   { id:'rooftop',    name:'天台的风',        desc:'触发天台事件（E24）',              hidden:true, check:function(){ return !!state.flags.e24_seen; } },
   { id:'immortal',   name:'修仙',            desc:'连续 3 天不吃早餐',                hidden:true, check:function(){ return (state.runStats.breakfastSkipStreak||0) >= 3; } },
-  { id:'keyboard',   name:'键来',            desc:'连续 3 天通宵复习',                hidden:true, check:function(){ return (state.runStats.allNightStreak||0) >= 3; } }
+  { id:'keyboard',   name:'键来',            desc:'连续 3 天通宵复习',                hidden:true, check:function(){ return (state.runStats.allNightStreak||0) >= 3; } },
+
+  /* ---- 路线结局成就 ---- */
+  { id:'end_baoyan',  name:'保研上岸',   desc:'以「保研之路」结局通关',   check:function(){ return ui.ending && ui.ending.special === 'baoyan'; } },
+  { id:'end_champion',name:'竞赛之王',   desc:'以「竞赛冠军」结局通关',   check:function(){ return ui.ending && ui.ending.special === 'champion'; } },
+  { id:'end_startup', name:'创业先锋',   desc:'以「创业新星」结局通关',   check:function(){ return ui.ending && ui.ending.special === 'startup'; } },
+  { id:'end_esports', name:'电竞之光',   desc:'以「电竞选手」结局通关',   check:function(){ return ui.ending && ui.ending.special === 'esports'; } },
+  { id:'end_phoenix', name:'涅槃重生',   desc:'以「不死鸟」结局通关',     check:function(){ return ui.ending && ui.ending.special === 'phoenix'; } },
+
+  /* ---- 道具使用成就 ---- */
+  { id:'potion',    name:'药罐子',   desc:'一局使用 5 次速效救心丸',      check:function(){ return (state.runStats.heartUses||0) >= 5; } },
+  { id:'undead',    name:'不死族',   desc:'一局使用 2 次不死图腾并通关',  check:function(){ return (state.runStats.totemTriggers||0) >= 2 && ui.ending && ['S','A','B','C'].indexOf(ui.ending.rating) >= 0; } },
+  { id:'paper_all', name:'雨露均沾', desc:'一局用押题卷提升过所有科目',    check:function(){ var pc = state.runStats.paperCourses || {}; return MAJOR_IDS.every(function(cid){ return !!pc[cid]; }); } },
+  { id:'shopping',  name:'购物狂',   desc:'一局购买道具累计消费 > 233 元', hidden:true, check:function(){ return (state.runStats.shopSpent||0) > 233; } },
+
+  /* ---- 收集 ---- */
+  { id:'collector', name:'结局收藏家', desc:'集齐全部 5 个特殊结局', hidden:true, check:function(){ return ['end_baoyan','end_champion','end_startup','end_esports','end_phoenix'].every(function(id){ return achievements.has(id); }); } }
 ];
 
 let achievements = loadAchievements();
@@ -807,6 +899,80 @@ let EVENTS = [
   EV('E62', '奖学金评定', 'milestone', 40, { minWeek: 8, maxWeek: 8 }, '学院开始评定奖学金，导员在群里发了申请条件和截止时间。', [
     OPT('冲刺一把', { stamina: -10, sanity: -5, prof: { course: 'all_major', delta: 5 } }, '把最后几天的时间都砸在成绩上。'),
     OPT('顺其自然', { sanity: 2 }, '你看了一眼条件，觉得自己希望不大。')
+  ]),
+
+  /* ---- 6.4.10 基础事件补充（E63~E72） ---- */
+  EV('E63', '食堂排长队', 'life', 55, {}, '中午的食堂排到了门口，前面还有二十多个人。', [
+    OPT('排队等', { stamina: -6, health: 5, sanity: -2 }, '排了二十分钟，总算吃上了热饭。'),
+    OPT('点外卖', { money: -25, health: 3 }, '外卖贵了点，但不用排队。'),
+    OPT('干脆不吃', { stamina: -4, health: -6, sanity: -3 }, '饿着肚子撑到晚上。')
+  ]),
+  EV('E64', '宿舍熄灯', 'life', 50, {}, '十一点整，宿舍准时熄灯，电脑屏幕的光格外刺眼。', [
+    OPT('摸黑上床', { stamina: 20, sanity: -2 }, '早睡了一回，第二天精神不错。'),
+    OPT('开台灯继续', { stamina: -5, sanity: -3, prof: { course: 'choose', delta: 3 } }, '台灯的光很暗，但勉强看了两页。'),
+    OPT('和室友聊天', { sanity: 8, stamina: -3 }, '聊到半夜，笑得停不下来。')
+  ]),
+  EV('E65', '手机没电', 'life', 45, {}, '手机在关键时刻没电关机，你站在教学楼门口有点无助。', [
+    OPT('找同学借充电宝', { stamina: -3, sanity: 2 }, '同学借了你充电宝，还聊了几句。'),
+    OPT('走回宿舍充', { stamina: -8, sanity: -3 }, '来回一趟，腿都走酸了。'),
+    OPT('干脆不看了', { sanity: 3 }, '没手机的一下午，意外地清静。')
+  ]),
+  EV('E66', '图书馆闭馆', 'life', 40, { minWeek: 2 }, '你正看得入神，广播响了：图书馆即将闭馆。', [
+    OPT('抱着书回宿舍', { stamina: -4, prof: { course: 'choose', delta: 3 } }, '路上还在想刚才那道题。'),
+    OPT('去教学楼续摊', { stamina: -6, sanity: -2, prof: { course: 'choose', delta: 4 } }, '教学楼10点才关，又学了两小时。'),
+    OPT('正好早点回去', { stamina: 8, sanity: 3 }, '难得早睡，第二天状态很好。')
+  ]),
+  EV('E67', '蹭讲座', 'course', 45, {}, '学院请了位行业大牛来讲座，教室坐得满满当当。', [
+    OPT('认真听并提问', { stamina: -5, sanity: 3, prof: { course: 'all_major', delta: 2 } }, '你的问题让大牛多讲了两页。'),
+    OPT('记笔记', { stamina: -4, prof: { course: 'choose', delta: 4 } }, '记满了两页纸，回去还得消化。'),
+    OPT('听一半就走', { stamina: -2, sanity: 2 }, '后半段太水，你溜去吃饭了。')
+  ]),
+  EV('E68', '实验报告忘带', 'course', 50, { minWeek: 3 }, '实验课要交报告，你翻遍书包才发现忘在宿舍了。', [
+    OPT('跑回宿舍拿', { stamina: -10, health: -2 }, '一路狂奔，踩点交上了。'),
+    OPT('找同学借一份改', { sanity: -4, prof: { course: 'choose', delta: -2 } }, '改了几个字交上去，心里发虚。'),
+    OPT('跟老师说明天补交', { prof: { course: 'choose', delta: -3 }, sanity: -3 }, '老师皱着眉记了名字。')
+  ]),
+  EV('E69', '室友请吃夜宵', 'social', 40, {}, '室友说拿了笔奖学金，请全宿舍下楼吃烧烤。', [
+    OPT('一起去', { sanity: 12, health: -4, stamina: -3 }, '没花钱还吃得开心，室友真够意思。'),
+    OPT('婉拒早睡', { stamina: 10, sanity: -3 }, '闻着烧烤味，饿着睡着了。'),
+    OPT('去了只喝饮料', { sanity: 6 }, '陪坐了一小时，聊得挺开心。')
+  ]),
+  EV('E70', '社团群刷屏', 'social', 35, {}, '社团群一晚上刷了 99+ 条，全是表情包和通知。', [
+    OPT('爬楼看完', { stamina: -3, sanity: -2 }, '翻到最后发现了活动报名链接。'),
+    OPT('设置免打扰', { sanity: 4 }, '世界清静了。'),
+    OPT('回个表情包', { sanity: 3, stamina: -1 }, '你发了个表情包，群里立刻热闹起来。')
+  ]),
+  EV('E71', '深夜emo', 'risky', 25, { sanityBelow: 50 }, '凌晨一点，你躺在床上刷着手机，突然觉得一切都没意思。', [
+    OPT('起来写日记', { stamina: -3, sanity: 10 }, '写着写着，眼泪掉下来，但也轻松了些。'),
+    OPT('听歌硬睡', { stamina: 12, sanity: 4 }, '戴上耳机，慢慢睡着了。'),
+    OPT('刷到天亮', { health: -5, stamina: -8, sanity: -4 }, '天亮时你还在刷，眼睛干得发疼。')
+  ]),
+  EV('E72', '快递站关门', 'life', 40, { minWeek: 2 }, '你跑到快递站，卷帘门已经拉下了一半。', [
+    OPT('求店员通融', { stamina: -3, sanity: 3 }, '店员叹了口气，帮你取了出来。'),
+    OPT('明天再来', { sanity: -3, stamina: -3 }, '又白跑一趟，有点烦。'),
+    OPT('放到代收点', { money: -5, sanity: 2 }, '花了五块钱，省得再跑。')
+  ]),
+
+  /* ---- 6.4.11 连锁：学科竞赛线（报名 → 集训 → 初赛 → 决赛） ---- */
+  EV('E73', '学科竞赛报名', 'course', 60, { minWeek: 2, anyProfMin: 55 }, '学院要选拔学生参加学科竞赛，辅导员在群里发了报名表。', [
+    OPT('报名参赛', { stamina: -2, sanity: 3, flag: { compJoined: true } }, '你填了报名表，有点小期待。'),
+    OPT('先观望', { sanity: 1 }, '报名表静静躺在群文件里。'),
+    OPT('不感兴趣', { sanity: 2 }, '你觉得还是先把课上好。')
+  ]),
+  EV('E74', '竞赛集训', 'course', 60, { flagRequired: 'compJoined', minWeek: 3 }, '竞赛集训开始了，每周三晚上在机房，教练盯得很紧。', [
+    OPT('认真参加', { stamina: -8, sanity: -2, prof: { course: 'choose', delta: 6 }, flag: { compTrained: true } }, '集训很累，但你感觉自己变强了。'),
+    OPT('去一次就溜', { sanity: -2, prof: { course: 'choose', delta: 2 } }, '第二次你就没去了。'),
+    OPT('退赛', { sanity: 2 }, '你退出了竞赛队。')
+  ]),
+  EV('E75', '竞赛初赛', 'course', 60, { flagRequired: 'compTrained', minWeek: 5, anyProfMin: 65 }, '初赛的题目比想象中难，你面前只剩最后一道大题。', [
+    OPT('死磕最后一题', { stamina: -10, sanity: -4, prof: { course: 'choose', delta: 5 }, flag: { compFinal: true } }, '你写满了答题纸，居然做出来了。'),
+    OPT('先保住前面的分', { stamina: -4, sanity: 2, flag: { compFinal: true } }, '你仔细检查了三遍，顺利晋级。'),
+    OPT('提前交卷', { sanity: 3 }, '你觉得没戏了，早早离场。')
+  ]),
+  EV('E76', '竞赛决赛', 'course', 60, { flagRequired: 'compFinal', minWeek: 7, anyProfMin: 80 }, '决赛现场，评委就在台下，你的手有点抖。', [
+    OPT('全力一搏', { stamina: -15, sanity: 5, money: 200, flag: { compWinner: true } }, '你超常发挥，拿下了名次和奖金。'),
+    OPT('稳扎稳打', { stamina: -8, sanity: 8, money: 100 }, '你稳稳做完，拿了个参与奖。'),
+    OPT('临场怯场', { sanity: -8, stamina: -5 }, '你脑子一片空白，草草收场。')
   ])
 ];
 
@@ -1011,8 +1177,12 @@ function createState(seed) {
     day: initDay(),
     exam: { pending: false, taken: false, scores: {}, failed: [], retakeTaken: false, retakeScores: {}, enteredRetake: false },
     eventState: { lastTrigger: {}, turnsSinceRare: 0 },
+    mode: 'free',
     stats: { collapseCount: 0 },
-    runStats: { workIncome: 0, breakfastSkipStreak: 0, allNightStreak: 0 }
+    runStats: { workIncome: 0, breakfastSkipStreak: 0, allNightStreak: 0 },
+    inventory: [],
+    shopBought: {},
+    shopStock: []
   };
 }
 
@@ -1058,9 +1228,13 @@ function initRuntime() {
   if (!state.day) state.day = initDay();
   if (!state.stats) state.stats = { collapseCount: 0 };
   if (!state.runStats) state.runStats = { workIncome: 0, breakfastSkipStreak: 0, allNightStreak: 0 };
+  if (!Array.isArray(state.inventory)) state.inventory = [];
+  if (!state.shopBought) state.shopBought = {};
+  if (!Array.isArray(state.shopStock) || !state.shopStock.length) state.shopStock = pickShopStock();
   if (!state.exam) state.exam = { taken: false, scores: {}, failed: [], retakeTaken: false, retakeScores: {} };
   if (!state.eventState) state.eventState = { lastTrigger: {}, turnsSinceRare: 0 };
   if (!state.flags) state.flags = {};
+  if (!state.mode) state.mode = 'free';
   if (!state.courses) state.courses = {};
   /* 旧存档字段补全（dslr_save_v1 不含逐节上课字段时仍可继续） */
   const d = state.day;
@@ -1096,7 +1270,7 @@ function saveGame() {
   try {
     if (!state.meta) state.meta = {};
     state.meta.phase = ui.phase;
-    state.meta.weekReport = (ui.phase === 'weekly' && ui.weekReport) ? clone(ui.weekReport) : null;
+    state.meta.weekReport = ((ui.phase === 'weekly' || ui.phase === 'shop') && ui.weekReport) ? clone(ui.weekReport) : null;
     state.meta.daySummary = (ui.phase === 'dayEnd' && ui.daySummary) ? clone(ui.daySummary) : null;
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   } catch (e) { /* 存档失败不阻塞游戏 */ }
@@ -1217,6 +1391,7 @@ function statHTML(label, value, cls, isPercent) {
   return '<div class="stat"><div class="head"><span>' + label + '</span><b class="' +
     (v <= 20 && isPercent ? 'red' : '') + '">' + shown + '</b></div>' +
     barHTML(v, cls, isPercent ? 20 : undefined) +
+    (isPercent ? '<span class="stat-state">' + statStatus(v) + '</span>' : '') +
     '<span class="tip">' + tip + '</span></div>';
 }
 
@@ -1237,6 +1412,9 @@ function renderSidebar() {
     '游戏熟练 <b>' + Math.round(p.gameProf || 0) + ' / 100</b><br>' +
     '开黑门槛 <b>' + (p.gameProf >= 40 ? '已解锁' : '40') + '</b> · 代练 <b>' + (p.gameProf >= 70 ? '已解锁' : '70') + '</b><br>' +
     '自由槽 <b>' + (state.day ? state.day.freeSlotsLeft : 0) + '</b>';
+  $('course-nums').innerHTML = MAJOR_IDS.map(function (id) {
+    return '<div class="cn"><span>' + COURSE_DEFS[id].short + '</span><b>' + Math.round(state.courses[id].prof || 0) + '</b></div>';
+  }).join('');
   try { updateRadarChart(); } catch (e) {}
   try { updateSanityChart(); } catch (e) {}
 }
@@ -1316,8 +1494,14 @@ function updateRadarChart() {
     const a = angles[i];
     const x = cx + Math.cos(a) * (R + 16);
     const y = cy + Math.sin(a) * (R + 16);
-    ctx.textAlign = Math.abs(Math.cos(a)) < 0.3 ? 'center' : (Math.cos(a) > 0 ? 'left' : 'right');
-    ctx.fillText(name, x, y);
+    const align = Math.abs(Math.cos(a)) < 0.3 ? 'center' : (Math.cos(a) > 0 ? 'left' : 'right');
+    const tw = ctx.measureText(name).width;
+    let lx = x;
+    /* 左右轴标签贴边时往回拉，避免窄侧栏里被裁掉（如 Android） */
+    if (align === 'right') lx = Math.max(tw + 4, x);
+    else if (align === 'left') lx = Math.min(w - tw - 4, x);
+    ctx.textAlign = align;
+    ctx.fillText(name, lx, y);
   });
 }
 
@@ -1400,6 +1584,7 @@ function renderCenter() {
   const c = $('center-body');
   switch (ui.phase) {
     case 'title': return renderTitle(c);
+    case 'modeSelect': return renderModeSelect(c);
     case 'schedule': return renderSchedule(c);
     case 'dayStart': return renderDayStart(c);
     case 'classSession': return renderClassSession(c);
@@ -1413,6 +1598,7 @@ function renderCenter() {
     case 'night': return renderNight(c);
     case 'dayEnd': return renderDayEnd(c);
     case 'weekly': return renderWeekly(c);
+    case 'shop': return renderShop(c);
     case 'collapse': return renderCollapse(c);
     case 'exam': return renderExam(c);
     case 'examResult': return renderExamResult(c);
@@ -1776,14 +1962,22 @@ function afterClass() {
     }
   }
   pushLog('第 ' + d.classesRun + ' 节后 · 课间：平静（未触发事件，剩余 ' + d.classesRemaining + ' 节）。');
+  if (ui.autoClass) { attendClass(); return; }
   ui.phase = 'classSession';
   renderAll();
+}
+
+/* 一键上课：连续结算当天课程，遇到课间事件自动暂停 */
+function autoAttendAll() {
+  ui.autoClass = true;
+  attendClass();
 }
 
 /* 当天课程结束：按「实际上了几节」结算理智分档与高强度日 */
 function finishClasses() {
   const d = state.day;
   const p = state.player;
+  ui.autoClass = false;
   if (!d) { ui.phase = 'classRun'; renderAll(); return; }
   if (!d.classesFinished) {
     d.classesFinished = true;
@@ -1816,6 +2010,7 @@ function startToday() {
   const t = state.time;
   const p = state.player;
   state.day = initDay();
+  ui.autoClass = false;
   const grid = t.week === 10 ? [null, null, null, null, null] : todayGrid();
   state.day.freeSlotsLeft = 5 - grid.filter(Boolean).length;
   state.day.classesRemaining = t.week === 10 ? 0 : grid.filter(Boolean).length;
@@ -1896,6 +2091,13 @@ function conditionOk(ev) {
   if (c.moneyBelow !== undefined && c.moneyBelow !== null && p.money >= c.moneyBelow) return false;
   if (c.flagRequired && !state.flags[c.flagRequired]) return false;
   if (c.flagMissing && state.flags[c.flagMissing]) return false;
+  if (c.gameProfMin !== undefined && (p.gameProf || 0) < c.gameProfMin) return false;
+  if (c.anyProfMin !== undefined && !MAJOR_IDS.some(function (id) { return (state.courses[id].prof || 0) >= c.anyProfMin; })) return false;
+  if (c.profMin) {
+    for (const cid in c.profMin) {
+      if ((state.courses[cid] ? state.courses[cid].prof : 0) < c.profMin[cid]) return false;
+    }
+  }
   return true;
 }
 
@@ -2000,7 +2202,7 @@ function chooseOption(idx) {
   if (opt.risky && state.player.sanity >= 40) return;
   if (opt.effects && opt.effects.leaveCount < 0 && state.player.leaveCount <= 0) return;
   ui.pendingOption = opt;
-  if (optNeedsCourse(opt)) {
+  if (optNeedsCourse(opt) && hasProfRoom()) {
     ui.phase = 'chooseCourse';
     renderAll();
     return;
@@ -2042,12 +2244,12 @@ function chooseLowSanity(kind) {
     if (!canSlackToday()) return;
     opt = { text: '翘课回宿舍躺平', effects: { sanity: 18, stamina: 20, skipRemaining: true }, resultText: '你回宿舍倒头就睡，醒来天已经黑了。', chance: null, risky: true };
   } else if (kind === 'grind') {
-    if (!examSoon()) return;
+    if (!examSoon() || !hasProfRoom()) return;
     opt = { text: '通宵突击', effects: { health: -15, sanity: -10, maxStaminaNextDay: -20, prof: { course: 'choose', delta: 15 }, night: 'allnight' }, resultText: '天亮时你合上书，手一直在抖。', chance: null, risky: true };
   }
   if (!opt) return;
   ui.pendingOption = opt;
-  if (optNeedsCourse(opt)) {
+  if (optNeedsCourse(opt) && hasProfRoom()) {
     ui.phase = 'chooseCourse';
     renderAll();
     return;
@@ -2076,7 +2278,7 @@ function applyPendingOption(chosenCourse) {
   ui.eventResultFailed = failed;
   pushLog('「' + ev.title + '」' + opt.text + ' → ' + text);
   ui.pendingOption = null;
-  if (state.player.health <= 0) { endGame('D', '生命归零'); return; }
+  if (checkDeath('生命归零')) return;
   ui.phase = 'eventResult';
   if (state.player.sanity <= 0) { triggerCollapse('eventResult'); return; }
   renderAll();
@@ -2098,6 +2300,7 @@ function continueClassFlow() {
   if (state.player.stamina <= 0) { triggerExhaustion(); finishClasses(); return; }
   if (d.exhausted) { finishClasses(); return; }
   if ((d.classesRemaining || 0) > 0) {
+    if (ui.autoClass) { attendClass(); return; }
     ui.phase = 'classSession';
     pushLog('课间结束，准备上第 ' + (d.classesRun + 1) + ' / ' + d.classTotal + ' 节。');
     renderAll();
@@ -2167,7 +2370,7 @@ function doFreeAction(kind, courseId) {
     const g = effectiveReviewGain(courseId);
     if (g <= 0) return;
     p.stamina = clamp(p.stamina - 4, 0, 100);
-    p.sanity = clamp(p.sanity - 2, 0, 100);
+    p.sanity = clamp(p.sanity - 2 + ((MODE_MODS[state.mode] || {}).reviewSanityAdj || 0), 0, 100);
     const applied = addProf(courseId, g, { weeklyCap: state.time.week !== 10 });
     d.reviewsByCourse[courseId] = (d.reviewsByCourse[courseId] || 0) + 1;
     d.freeSlotsLeft--;
@@ -2200,7 +2403,7 @@ function doFreeAction(kind, courseId) {
   } else if (kind === 'social') {
     if (state.time.week < 5 || p.money < 15) return;
     p.stamina = clamp(p.stamina - 4, 0, 100);
-    p.sanity = clamp(p.sanity + 10, 0, 100);
+    p.sanity = clamp(p.sanity + 10 + ((MODE_MODS[state.mode] || {}).socialBonus || 0), 0, 100);
     p.money -= 15;
     d.freeSlotsLeft--;
     pushLog('社团 / 社交 1 格：理智 +10，¥-15。');
@@ -2209,7 +2412,7 @@ function doFreeAction(kind, courseId) {
     const gain = n === 0 ? 8 : n === 1 ? 5 : 1;
     const gp = addGameProf(6);
     p.stamina = clamp(p.stamina - 5, 0, 100);
-    p.sanity = clamp(p.sanity + gain, 0, 100);
+    p.sanity = clamp(p.sanity + gain + ((MODE_MODS[state.mode] || {}).gameBonus || 0), 0, 100);
     p.gameCountThisWeek++;
     d.freeSlotsLeft--;
     pushLog('打游戏 1 格：理智 +' + gain + '（本周第 ' + (n + 1) + ' 次），体力 -5，游戏熟练 +' + gp + '。' +
@@ -2219,7 +2422,7 @@ function doFreeAction(kind, courseId) {
     if (p.money < 10) return;
     const gp = addGameProf(2);
     p.stamina = clamp(p.stamina - 6, 0, 100);
-    p.sanity = clamp(p.sanity + 22, 0, 100);
+    p.sanity = clamp(p.sanity + 22 + ((MODE_MODS[state.mode] || {}).socialBonus || 0), 0, 100);
     p.money -= 10;
     d.freeSlotsLeft--;
     pushLog('和朋友开黑 1 格：理智 +22，体力 -6，¥-10，游戏熟练 +' + gp + '。' +
@@ -2288,7 +2491,7 @@ function confirmMeals() {
   } else {
     state.weekly.mealStreak = 0;
   }
-  if (p.health <= 0) { endGame('D', '生命归零（漏餐）'); return; }
+  if (checkDeath('生命归零（漏餐）')) return;
   enterNight();
 }
 
@@ -2311,7 +2514,7 @@ function autoNightOverride() {
   state.weekly.hadLateNight = true;
   pushLog('事件已占用夜间：' + (late ? '熬夜' : '通宵') + '，跳过作息选择（未提及的数值按硬性默认结算）。');
   state.day.nightOverride = null;
-  if (p.health <= 0) { endGame('D', '生命归零（事件通宵）'); return; }
+  if (checkDeath('生命归零（事件通宵）')) return;
   finishDay(false);
 }
 
@@ -2349,7 +2552,7 @@ function doNight(kind, courseId) {
   } else {
     return;
   }
-  if (p.health <= 0) { endGame('D', '生命归零（夜间）'); return; }
+  if (checkDeath('生命归零（夜间）')) return;
   if (p.sanity <= 0 && !p.isCollapsed) { triggerCollapse('finishDay'); return; }
   finishDay(false);
 }
@@ -2361,7 +2564,7 @@ function finishDay(afterCollapse) {
     p.sanity = clamp(p.sanity - 3, 0, 100);
     pushLog('理智低于 40，雪崩：每日 -3。');
   }
-  if (p.health <= 0) { endGame('D', '生命归零'); return; }
+  if (checkDeath('生命归零')) return;
   if (p.sanity <= 0 && !p.isCollapsed) { triggerCollapse('finishDay'); return; }
 
   state.meta.turnIndex++;
@@ -2428,7 +2631,7 @@ function processRestDay() {
   }
   pushLog((absent ? '旷课日' : '请假休息') + '：体力 +30' + (absent ? '' : '，理智 +5') +
     '，自动用餐 ' + eaten + ' 餐' + (missed ? '，漏餐 ' + missed + ' 顿（生命 -' + (5 * missed) + '）' : '') + '。');
-  if (p.health <= 0) { endGame('D', absent ? '旷课期间生命归零' : '请假期间生命归零'); return; }
+  if (checkDeath(absent ? '旷课期间生命归零' : '请假期间生命归零')) return;
   saveGame();
   const t = state.time;
   if (p.restSkipDays <= 0) { p.skipMode = null; p.skipClassNextDay = false; p.skipClassReason = null; }
@@ -2474,6 +2677,8 @@ function settleWeek() {
     sleep: sleepGain,
     balance: p.money
   };
+  state.shopBought = {};
+  state.shopStock = pickShopStock();
   ui.phase = 'weekly';
   ui.weeklySaved = null;
   saveGame();
@@ -2542,9 +2747,22 @@ function gradeRank(g) {
   return ({ S: 7, A: 6, B: 5, C: 4, F: 3, D: 2 })[g] || 0;
 }
 
+function checkSpecialEnding(rating, info) {
+  if (rating === 'D' || rating === 'F') return null;
+  const p = state.player;
+  const all100 = MAJOR_IDS.every(function (id) { return (state.courses[id].prof || 0) >= 100; });
+  if (rating === 'S' && all100 && p.health >= 60) return { id: 'baoyan', name: '保研之路', rarity: '传说' };
+  if (state.flags.compWinner) return { id: 'champion', name: '竞赛冠军', rarity: '史诗' };
+  if (state.flags.clubJoined && p.money >= 2000) return { id: 'startup', name: '创业新星', rarity: '史诗' };
+  if ((p.gameProf || 0) >= 100) return { id: 'esports', name: '电竞选手', rarity: '史诗' };
+  if ((state.stats.collapseCount || 0) >= 3) return { id: 'phoenix', name: '不死鸟', rarity: '稀有' };
+  return null;
+}
+
 function endGame(rating, reason, info) {
   if (ui.phase === 'ending') return;
   info = info || {};
+  const special = checkSpecialEnding(rating, info);
 
   /* 撑过天数按日历计算：1-9 周每周 5 天，第 10 周补考 7 天 */
   function calendarDays() {
@@ -2562,7 +2780,10 @@ function endGame(rating, reason, info) {
   try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
   ui.ending = {
     rating: rating,
-    reason: reason,
+    reason: special ? special.name : reason,
+    rarity: special ? special.rarity : null,
+    special: special ? special.id : null,
+    baseReason: reason,
     days: calendarDays(),
     info: info,
     runCount: state.player.runCount,
@@ -2741,7 +2962,7 @@ function effectSummary(eff) {
   num('校园跑', eff.runCount);
   num('请假', eff.leaveCount);
   num('次日体力上限', eff.maxStaminaNextDay);
-  if (eff.flag) parts.push(chip('解锁社团', 'flag'));
+  if (eff.flag) parts.push(chip('触发后续', 'flag'));
   if (eff.skipToday) parts.push(chip('今日课程全翘', 'flag'));
   if (eff.skipRemaining) parts.push(chip('剩余课程全翘', 'flag'));
   if (eff.skipNextDay) parts.push(chip('次日课程全翘', 'flag'));
@@ -2793,7 +3014,10 @@ function renderClassSession(c) {
     (COURSE_DEFS[cur.id].type === 'major' ? '专业课 · 体力 -5 · 熟练度 +' + expect + capNote : '公共课 · 体力 -5') +
     '</span></div></div>' +
     '</div>' +
-    '<div class="action-row"><button class="btn gold big" onclick="attendClass()">上这节课</button></div>' +
+    '<div class="action-row">' +
+    '<button class="btn big" onclick="autoAttendAll()">▶ 一键上完今天的课</button>' +
+    '<button class="btn gold big" onclick="attendClass()">上这节课</button>' +
+    '</div>' +
     '<details class="rules"><summary>？规则说明</summary><p class="hint">每节课后按 ' + Math.round(CLASS_EVENT_CHANCE * 100) + '% 概率触发课间事件，每天最多 ' +
     CLASS_EVENT_DAILY_CAP + ' 次；课间可消耗理智换体力，或选择翘掉剩余课程。</p></details>' +
     '</div>';
@@ -2860,7 +3084,7 @@ function renderEvent(c) {
     const isCourse = ev.category === 'course';
     const showDesperate = isCourse && hasProfRoom();
     const showSlack = canSlackToday();
-    const showGrind = examSoon();
+    const showGrind = examSoon() && hasProfRoom();
     if (showDesperate || showSlack || showGrind) {
       lowOpts =
         '<h3 style="color:var(--hp)">理智衰弱 · 低理智专属</h3>' +
@@ -2956,6 +3180,38 @@ function reviewBlockedReason(courseId) {
   return '';
 }
 
+/* ---------- 自由时间：一键执行 ---------- */
+function pickAutoFreeAction() {
+  const d = state.day;
+  const p = state.player;
+  if (p.stamina < 35) return { kind: 'nap' };
+  if (p.sanity < 35) return { kind: 'rest' };
+  let best = null;
+  MAJOR_IDS.forEach(function (id) {
+    if ((d.reviewsByCourse[id] || 0) >= 2) return;
+    if (d.skippedCourses.indexOf(id) >= 0) return;
+    if (effectiveReviewGain(id) <= 0) return;
+    if (!best || state.courses[id].prof < state.courses[best].prof) best = id;
+  });
+  if (best) return { kind: 'review', courseId: best };
+  return { kind: 'rest' };
+}
+function autoFreeTime() {
+  const d = state.day;
+  if (!d) return;
+  let guard = 0;
+  while (d.freeSlotsLeft > 0 && guard++ < 20) {
+    if (ui.phase !== 'freeTime') return;
+    const before = d.freeSlotsLeft;
+    const act = pickAutoFreeAction();
+    if (!act) break;
+    doFreeAction(act.kind, act.courseId);
+    if (d.freeSlotsLeft === before) break;
+    if (ui.phase !== 'freeTime') return;
+  }
+  renderAll();
+}
+
 function renderFreeTime(c) {
   const d = state.day;
   const p = state.player;
@@ -2987,6 +3243,7 @@ function renderFreeTime(c) {
     (noSlots ? '<span class="red">自由格已用完，请结束自由时间</span>' :
       (capReason ? '<span class="red">' + capReason + '（打游戏仍可回理智）</span>' : '')) +
     '</div>' +
+    '<div class="action-row" style="margin-bottom:4px"><button class="btn gold big" ' + (noSlots ? 'disabled' : '') + ' onclick="autoFreeTime()">▶ 一键排满自由格（自动复习最弱科 + 恢复）</button></div>' +
     '<h3>复习（1 格）</h3>' +
     '<div class="action-row">' + reviewBtns + '</div>' +
     '<h3>行动 · 恢复</h3>' +
@@ -3124,6 +3381,224 @@ function skipSave() {
   renderCenter();
 }
 
+/* ---------- 道具 / 背包 / 商店 ---------- */
+function openBag() {
+  if (!state || ui.phase === 'title') return;
+  renderBag();
+  const m = $('bag-modal');
+  if (m) { m.classList.add('show'); m.setAttribute('aria-hidden', 'false'); }
+}
+function closeBag() {
+  const m = $('bag-modal');
+  if (m) { m.classList.remove('show'); m.setAttribute('aria-hidden', 'true'); }
+}
+function renderBag() {
+  const grid = $('bag-grid');
+  if (!grid) return;
+  /* 旧存档可能残留已删除的道具 id：先清理，避免渲染时取到 undefined */
+  state.inventory = state.inventory.filter(function (id) { return !!ITEMS[id]; });
+  $('bag-cap').textContent = state.inventory.length + ' / ' + BAG_CAP;
+  let html = '';
+  for (let i = 0; i < BAG_CAP; i++) {
+    const id = state.inventory[i];
+    if (!id) { html += '<div class="bag-slot empty"><span class="icon">＋</span></div>'; continue; }
+    const it = ITEMS[id];
+    if (!it) { html += '<div class="bag-slot empty"><span class="icon">＋</span></div>'; continue; }
+    html += '<div class="bag-slot" onclick="useItemAt(' + i + ')"><span class="icon">' + it.icon + '</span><span class="nm">' + it.name + '</span></div>';
+  }
+  grid.innerHTML = html;
+  const det = $('bag-detail');
+  if (det) det.innerHTML = '<p class="hint">点击道具查看效果与使用。</p>';
+}
+/* 点击道具：先展示效果说明与「使用」确认，避免误用 */
+function useItemAt(i) {
+  const id = state.inventory[i];
+  const it = ITEMS[id];
+  if (!it) return;
+  const det = $('bag-detail');
+  if (!det) return;
+  const ctx = itemContext(it);
+  const wasted = itemEffectWasted(it);
+  det.innerHTML =
+    '<div class="item-detail">' +
+    '<div class="item-detail-head"><span class="icon">' + it.icon + '</span><b>' + it.name + '</b></div>' +
+    '<div class="item-detail-desc">效果：' + it.desc + (ctx ? '（' + ctx + '）' : '') +
+    (wasted ? ' <span class="red">（已达上限，使用无效果）</span>' : '') + '</div>' +
+    (it.type === 'totem'
+      ? '<p class="hint">被动道具：放在背包里即可，生命归零时自动生效，无需手动使用。</p>' +
+        '<div class="action-row"><button class="btn small" onclick="renderBag()">知道了</button></div>'
+      : (wasted
+        ? '<div class="action-row"><button class="btn small" onclick="renderBag()">知道了</button></div>'
+        : '<div class="action-row"><button class="btn gold small" onclick="confirmUseItem(' + i + ')">使用</button>' +
+          '<button class="btn small" onclick="renderBag()">取消</button></div>')) +
+    '</div>';
+}
+function itemContext(it) {
+  const p = state.player;
+  if (it.type === 'stamina') return '当前体力 ' + Math.round(p.stamina) + ' / 100';
+  if (it.type === 'health') return '当前生命 ' + Math.round(p.health) + ' / 100';
+  if (it.type === 'sanity') return '当前理智 ' + Math.round(p.sanity) + ' / 100';
+  if (it.type === 'leave') return '当前请假 ' + p.leaveCount + ' / 5';
+  if (it.type === 'prof') return '当前 ' + MAJOR_IDS.map(function (cid) { return COURSE_DEFS[cid].short + ' ' + Math.round(state.courses[cid].prof || 0); }).join(' / ');
+  return '';
+}
+function itemEffectWasted(it) {
+  const p = state.player;
+  if (it.type === 'stamina') return p.stamina >= ((state.day && state.day.staminaCap) || 100);
+  if (it.type === 'health') return p.health >= 100;
+  if (it.type === 'sanity') return p.sanity >= 100;
+  if (it.type === 'leave') return p.leaveCount >= 5;
+  return false;
+}
+function confirmUseItem(i) {
+  const id = state.inventory[i];
+  const it = ITEMS[id];
+  if (!it) { renderBag(); return; }
+  if (it.type === 'prof') { showBagCoursePicker(i); return; }
+  if (it.type === 'totem') { renderBag(); return; }
+  if (!applyItemEffect(it)) {
+    const det = $('bag-detail');
+    if (det) det.innerHTML = '<p class="hint red">使用失败：' + it.name + ' 对应的数值已达上限，道具未被消耗。</p>';
+    return;
+  }
+  state.inventory.splice(i, 1);
+  if (it.id === 'heart') state.runStats.heartUses = (state.runStats.heartUses || 0) + 1;
+  pushLog('使用道具：' + it.name + '（' + it.desc + '）');
+  saveGame();
+  renderBag(); renderAll();
+}
+function applyItemEffect(it) {
+  const p = state.player;
+  if (it.type === 'stamina') {
+    const before = p.stamina;
+    p.stamina = clamp(p.stamina + it.value, 0, (state.day && state.day.staminaCap) || 100);
+    return p.stamina !== before;
+  }
+  if (it.type === 'health') {
+    const before = p.health;
+    p.health = clamp(p.health + it.value, 0, 100);
+    return p.health !== before;
+  }
+  if (it.type === 'sanity') {
+    const before = p.sanity;
+    p.sanity = clamp(p.sanity + it.value, 0, 100);
+    return p.sanity !== before;
+  }
+  if (it.type === 'leave') {
+    const before = p.leaveCount;
+    p.leaveCount = Math.min(5, p.leaveCount + it.value);
+    return p.leaveCount !== before;
+  }
+  return false;
+}
+function showBagCoursePicker(i) {
+  const it = ITEMS[state.inventory[i]];
+  const det = $('bag-detail');
+  if (!det) return;
+  let html = '<p class="hint">使用「' + it.name + '」，选择一门课程熟练度 +' + it.value + '：</p>';
+  html += '<div class="action-row">';
+  MAJOR_IDS.forEach(function (id) {
+    const full = (state.courses[id].prof || 0) >= 100;
+    html += '<button class="btn small" ' + (full ? 'disabled' : '') + ' onclick="useProfItem(' + i + ',\'' + id + '\')">' +
+      COURSE_DEFS[id].short + (full ? '（已满）' : '') + '</button>';
+  });
+  html += '<button class="btn small" onclick="renderBag()">取消</button></div>';
+  det.innerHTML = html;
+}
+function useProfItem(i, courseId) {
+  const it = ITEMS[state.inventory[i]];
+  if (!it) return;
+  const before = state.courses[courseId].prof || 0;
+  addProf(courseId, it.value, { weeklyCap: false });
+  const after = state.courses[courseId].prof || 0;
+  if (after === before) {
+    const det = $('bag-detail');
+    if (det) det.innerHTML = '<p class="hint red">该科目熟练度已达 100，押题卷未被消耗。</p>';
+    return;
+  }
+  state.runStats.paperCourses = state.runStats.paperCourses || {};
+  state.runStats.paperCourses[courseId] = true;
+  state.inventory.splice(i, 1);
+  pushLog('使用道具：' + it.name + '（' + COURSE_DEFS[courseId].short + ' 熟练度 +' + it.value + '）');
+  saveGame();
+  renderBag(); renderAll();
+}
+
+function pickShopStock() {
+  const pool = SHOP_ORDER.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+  }
+  return pool.slice(0, 4);
+}
+
+function enterShop() { ui.phase = 'shop'; renderAll(); }
+function closeShop() { ui.phase = 'weekly'; renderAll(); }
+
+function renderShop(c) {
+  const p = state.player;
+  if (!Array.isArray(state.shopStock) || !state.shopStock.length) state.shopStock = pickShopStock();
+  const bagFull = state.inventory.length >= BAG_CAP;
+  let cards = '';
+  state.shopStock.forEach(function (id) {
+    const it = ITEMS[id];
+    const bought = state.shopBought[id] || 0;
+    const limit = SHOP_WEEK_LIMIT[id] || 1;
+    const soldOut = bought >= limit;
+    const noMoney = p.money < it.price;
+    const disabled = soldOut || noMoney || bagFull;
+    const label = soldOut ? '已购满' : (bagFull ? '背包已满' : (noMoney ? '余额不足' : '购买'));
+    cards += '<div class="shop-card">' +
+      '<div class="shop-icon">' + it.icon + '</div>' +
+      '<div class="shop-name">' + it.name + '</div>' +
+      '<div class="shop-desc">' + it.desc + '</div>' +
+      '<div class="shop-price">¥' + it.price + ' <span class="dim">（本周 ' + bought + '/' + limit + '）</span></div>' +
+      '<button class="btn small" ' + (disabled ? 'disabled' : '') + ' onclick="buyItem(\'' + id + '\')">' + label + '</button>' +
+      '</div>';
+  });
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>🛒 本周购物</h2>' +
+    '<p class="hint">余额 <b class="gold">¥' + p.money + '</b> · 背包 <b>' + state.inventory.length + ' / ' + BAG_CAP + '</b></p>' +
+    '<div class="shop-grid">' + cards + '</div>' +
+    '<div class="action-row"><button class="btn gold big" onclick="closeShop()">完成购物 → 返回周结算</button></div>' +
+    '</div>';
+}
+
+function buyItem(id) {
+  const it = ITEMS[id];
+  const p = state.player;
+  if (!it) return;
+  if (state.inventory.length >= BAG_CAP) { pushLog('背包已满，无法购买。'); renderAll(); return; }
+  if (p.money < it.price) { pushLog('余额不足，无法购买。'); renderAll(); return; }
+  const bought = state.shopBought[id] || 0;
+  if (bought >= (SHOP_WEEK_LIMIT[id] || 1)) return;
+  p.money -= it.price;
+  state.inventory.push(id);
+  state.shopBought[id] = bought + 1;
+  state.runStats.shopSpent = (state.runStats.shopSpent || 0) + it.price;
+  pushLog('购买道具：' + it.name + '（¥' + it.price + '）。');
+  saveGame();
+  renderAll();
+}
+
+/* 生命归零检查：持有「不死图腾」则消耗并保命 */
+function checkDeath(reason) {
+  if (state.player.health > 0) return false;
+  const i = state.inventory.indexOf('totem');
+  if (i >= 0) {
+    state.inventory.splice(i, 1);
+    state.player.health = 1;
+    state.runStats.totemTriggers = (state.runStats.totemTriggers || 0) + 1;
+    pushLog('不死图腾发动：' + reason + '，生命保留 1 点。');
+    saveGame();
+    return false;
+  }
+  endGame('D', reason);
+  return true;
+}
+
 function renderWeekly(c) {
   const r = ui.weekReport;
   if (!r) { c.innerHTML = ''; return; }
@@ -3146,7 +3621,9 @@ function renderWeekly(c) {
     '</div>' +
     '<div class="save-note">' + (ui.weeklySaved === true ? '<span class="green">✓ 存档成功，标题页可「继续上次」读档</span>' : ui.weeklySaved === false ? '<span class="dim">已跳过本次存档（后续操作仍会自动保存）</span>' : '') + '</div>' +
     '</div>' +
-    '<div class="action-row"><button class="btn gold big" onclick="continueWeekly()">' +
+    '<div class="action-row">' +
+    '<button class="btn" onclick="enterShop()">🛒 去购物</button>' +
+    '<button class="btn gold big" onclick="continueWeekly()">' +
     (state.time.week === 9 ? '继续：期中考试' : '继续：排下周课表') + '</button></div>' +
     '</div>';
 }
@@ -3255,6 +3732,7 @@ function renderEnding(c) {
   }
   c.innerHTML =
     '<div class="panel" style="text-align:center">' +
+    (e.rarity ? '<div style="font-size:13px;color:var(--purple);letter-spacing:2px;margin-top:10px">【' + e.rarity + '结局】</div>' : '') +
     '<div style="font-size:40px;color:var(--gold);text-shadow:4px 4px 0 #000;margin:10px 0">' + e.rating + '</div>' +
     '<h2 style="border-bottom:none">' + e.reason + '</h2>' +
     '<div class="validate" style="justify-content:center">' +
@@ -3277,28 +3755,66 @@ function startNewGame() {
   if (localStorage.getItem(SAVE_KEY)) {
     if (!confirm('已有进行中的存档，开始新游戏会覆盖它。确定继续？')) return;
   }
+  ui.phase = 'modeSelect';
+  renderAll();
+}
+
+function renderModeSelect(c) {
+  let cards = '';
+  ['scholar','social','contest','slacker','free'].forEach(function (id) {
+    const m = MODES[id];
+    cards += '<div class="mode-card">' +
+      '<div class="mode-name">' + m.name + '</div>' +
+      '<div class="mode-desc">' + m.desc + '</div>' +
+      '<button class="btn small" onclick="chooseMode(\'' + id + '\')">选择</button>' +
+      '</div>';
+  });
+  c.innerHTML =
+    '<div class="panel">' +
+    '<h2>选择开局模式</h2>' +
+    '<p class="hint">每种模式只有小幅数值增减；自由模式没有任何被动，同样能靠努力刷出连锁事件。</p>' +
+    '<div class="mode-grid">' + cards + '</div>' +
+    '<div class="action-row"><button class="btn" onclick="goTitle()">返回标题</button></div>' +
+    '</div>';
+}
+
+function chooseMode(id) {
   record = loadRecord();
   const seed = Math.floor(Math.random() * 2147483647);
   initRng(seed);
   state = createState(seed);
+  state.mode = id;
+  applyModeStart(id);
   ui.ending = null;
   pushLog('开学第一天：你拖着行李箱站在宿舍楼下。');
+  pushLog('本局模式：' + MODES[id].name + '。');
   pushLog('生活费到账 ¥425，第 1 周课表由系统随机生成。');
   ui.phase = 'schedule';
   saveGame();
   renderAll();
 }
 
+function applyModeStart(id) {
+  const m = MODE_MODS[id] || {};
+  const p = state.player;
+  if (m.startStamina) p.stamina = clamp(p.stamina + m.startStamina, 0, 100);
+  if (m.startMoney) p.money = Math.max(0, p.money + m.startMoney);
+  if (m.startProf) {
+    const cid = MAJOR_IDS[Math.floor(random() * MAJOR_IDS.length)];
+    state.courses[cid].prof = clamp((state.courses[cid].prof || 0) + m.startProf, 0, 100);
+  }
+}
+
 function continueGame() {
   const s = loadGame();
   if (!s) { alert('没有找到可用的存档。'); ui.phase = 'title'; renderAll(); return; }
   state = s;
-  initRuntime();
   initRng(state.meta.seed || 1);
+  initRuntime();
   /* 按存档阶段恢复：周结算/考试等阶段若一律回 dayStart，会重复过同一天（周五会重复领生活费）。
      旧存档没有 phase 字段时回退到 dayStart；只恢复不依赖临时 UI 数据的阶段。 */
   const savedPhase = (state.meta && state.meta.phase) || 'dayStart';
-  const restorable = ['schedule','dayStart','freeTime','night','weekly','dayEnd','exam','examResult','retakeResult'];
+  const restorable = ['schedule','dayStart','freeTime','night','weekly','shop','dayEnd','exam','examResult','retakeResult'];
   ui.phase = restorable.indexOf(savedPhase) >= 0 ? savedPhase : 'dayStart';
   ui.weekReport = (state.meta && state.meta.weekReport) ? clone(state.meta.weekReport) : null;
   ui.daySummary = (state.meta && state.meta.daySummary) ? clone(state.meta.daySummary) : null;
