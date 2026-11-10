@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>大学生活模拟器 · Demo</title>
 <style>
-@import url("https://fontsapi.zeoseven.com/570/main/result.css");
   :root{
     --bg:#1B1B2F;
     --panel:#2A2A40;
@@ -197,6 +196,10 @@
   .ach-badge.locked b{color:var(--dim);}
   .ach-badge.hidden.on{border-color:var(--hp);}
   .ach-badge.hidden.on b{color:var(--hp);}
+  .ach-badge.clickable{cursor:pointer;}
+  .ach-badge.clickable:hover{border-color:var(--gold);}
+  .ach-detail-name{font-size:15px;color:var(--gold);margin-bottom:8px;}
+  .ach-detail-desc{font-size:13px;color:var(--text);line-height:1.7;}
   /* 成就解锁提示 */
   #ach-toast{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
   .ach-toast{background:#000;border:2px solid var(--gold);box-shadow:4px 4px 0 #000;padding:8px 12px;min-width:170px;animation:achIn .22s steps(3) both;}
@@ -328,7 +331,7 @@
 <body>
 <div id="app">
   <header id="topbar">
-    <div class="brand">大学生活模拟器<span class="ver">DEMO v0.1 · 像素生存</span></div>
+    <div class="brand">大学生活模拟器<span class="ver">DEMO v0.5 · 像素生存</span></div>
     <div id="clock" class="clock">未开始</div>
     <div id="stats" class="stats"></div>
     <button id="bag-btn" class="bag-btn" onclick="openBag()" title="背包" aria-label="打开背包">🎒 背包</button>
@@ -366,6 +369,13 @@
     <div class="bag-head"><span>🎒 背包</span><span id="bag-cap" class="dim"></span><button class="btn small" onclick="closeBag()">关闭</button></div>
     <div class="bag-grid" id="bag-grid"></div>
     <div id="bag-detail" class="bag-detail"><p class="hint">点击道具查看效果与使用。</p></div>
+  </div>
+</div>
+
+<div id="ach-detail" class="bag-modal" onclick="if(event.target===this)closeAchDetail()">
+  <div class="bag-box">
+    <div class="bag-head"><span>🏆 成就详情</span><button class="btn small" onclick="closeAchDetail()">关闭</button></div>
+    <div id="ach-detail-body"></div>
   </div>
 </div>
 
@@ -453,6 +463,7 @@ const ACHIEVEMENTS = [
   { id:'rooftop',    name:'天台的风',        desc:'触发天台事件（E24）',              hidden:true, check:function(){ return !!state.flags.e24_seen; } },
   { id:'immortal',   name:'修仙',            desc:'连续 3 天不吃早餐',                hidden:true, check:function(){ return (state.runStats.breakfastSkipStreak||0) >= 3; } },
   { id:'keyboard',   name:'键来',            desc:'连续 3 天通宵复习',                hidden:true, check:function(){ return (state.runStats.allNightStreak||0) >= 3; } },
+  { id:'runner',     name:'闪动校园',        desc:'一局累计校园跑 30 次',             check:function(){ return (state.player.runCount||0) >= 30; } },
 
   /* ---- 路线结局成就 ---- */
   { id:'end_baoyan',  name:'保研上岸',   desc:'以「保研之路」结局通关',   check:function(){ return ui.ending && ui.ending.special === 'baoyan'; } },
@@ -531,12 +542,37 @@ function achGalleryHTML(){
     const cls = 'ach-badge' + (on ? ' on' : ' locked') + (a.hidden ? ' hidden' : '');
     let name = a.name, desc = a.desc;
     if (a.hidden && !on) { name = '？？？'; desc = '隐藏成就'; }
-    else if (!on) { desc = '未解锁'; }
-    items += '<div class="' + cls + '"><b>' + (on ? '✓ ' : '') + name + '</b><span>' + desc + '</span></div>';
+    else if (!on) { desc = '未解锁 · 点击查看'; }
+    const clickable = !a.hidden || on;
+    items += '<div class="' + cls + (clickable ? ' clickable' : '') + '"' +
+      (clickable ? ' onclick="showAchDetail(\'' + a.id + '\')"' : '') +
+      '><b>' + (on ? '✓ ' : '') + name + '</b><span>' + desc + '</span></div>';
   }
   return '<div class="ach-gallery">' +
     '<div class="ach-head">🏆 成就图鉴 <span class="ach-count">' + unlockedCount + ' / ' + total + '</span></div>' +
     '<div class="ach-grid">' + items + '</div></div>';
+}
+
+/* 成就详情弹窗：普通成就展示解锁条件；隐藏成就锁定时不揭示内容 */
+function showAchDetail(id) {
+  const a = getAchievement(id);
+  if (!a) return;
+  const body = $('ach-detail-body');
+  const modal = $('ach-detail');
+  if (!body || !modal) return;
+  const on = achievements.has(id);
+  let name = a.name, desc = a.desc;
+  if (a.hidden && !on) { name = '？？？'; desc = '隐藏成就：达成条件后自动解锁'; }
+  body.innerHTML =
+    '<div class="ach-detail-name">' + name + '</div>' +
+    '<div class="ach-detail-desc">解锁条件：' + desc + '</div>' +
+    '<p class="hint">' + (on ? '✓ 已解锁' : '尚未解锁') + '</p>' +
+    '<div class="action-row"><button class="btn gold small" onclick="closeAchDetail()">知道了</button></div>';
+  modal.classList.add('show');
+}
+function closeAchDetail() {
+  const modal = $('ach-detail');
+  if (modal) modal.classList.remove('show');
 }
 
 /* ========= 工具 ========= */
@@ -1141,7 +1177,7 @@ function createState(seed) {
 
   return {
     meta: {
-      version: 'demo-0.1',
+      version: 'demo-0.5',
       seed: seed,
       startedAt: Date.now(),
       turnIndex: 0
@@ -1219,7 +1255,9 @@ function initDay() {
     hadLate: false,
     exhausted: false,
     eventDone: false,
-    eventCount: 0
+    eventCount: 0,
+    started: false,
+    dateKey: null
   };
 }
 
@@ -1248,6 +1286,8 @@ function initRuntime() {
   if (typeof d.classesRemaining !== 'number') d.classesRemaining = 0;
   if (typeof d.classesRun !== 'number') d.classesRun = 0;
   const p = state.player;
+  if (p.runCount === undefined) p.runCount = 0;
+  if (p.leaveCount === undefined) p.leaveCount = 5;
   if (p.maxStaminaNextDay === undefined) p.maxStaminaNextDay = 0;
   if (p.skipClassNextDay === undefined) p.skipClassNextDay = false;
   if (p.restSkipDays === undefined) p.restSkipDays = 0;
@@ -1406,7 +1446,7 @@ function renderSidebar() {
   if (!state || ui.phase === 'title') return;
   const p = state.player;
   $('side-info').innerHTML =
-    '体育累计 <b>' + p.runCount + ' / 50</b><br>' +
+    '体育累计 <b>' + p.runCount + ' / 30</b><br>' +
     '请假剩余 <b>' + p.leaveCount + ' / 5</b><br>' +
     '本周资料 <b>' + (p.studyKitThisWeek ? '已缴' : '未缴') + '</b><br>' +
     '游戏熟练 <b>' + Math.round(p.gameProf || 0) + ' / 100</b><br>' +
@@ -2009,7 +2049,22 @@ function finishClasses() {
 function startToday() {
   const t = state.time;
   const p = state.player;
+  const todayKey = t.week + '-' + t.dayOfWeek;
+  if (state.day && state.day.started && state.day.dateKey === todayKey) {
+    /* 读档重开当天：不重置进度，从残留状态继续，避免刷课/刷课间事件 */
+    if (!state.day.classesFinished) {
+      ui.phase = 'classSession';
+      pushLog('读档恢复：从当天剩余课程继续。');
+    } else {
+      ui.phase = 'freeTime';
+      pushLog('读档恢复：从当天自由时间继续。');
+    }
+    renderAll();
+    return;
+  }
   state.day = initDay();
+  state.day.started = true;
+  state.day.dateKey = todayKey;
   ui.autoClass = false;
   const grid = t.week === 10 ? [null, null, null, null, null] : todayGrid();
   state.day.freeSlotsLeft = 5 - grid.filter(Boolean).length;
@@ -2085,7 +2140,6 @@ function conditionOk(ev) {
   if (c.minWeek && t.week < c.minWeek) return false;
   if (c.maxWeek && t.week > c.maxWeek) return false;
   if (c.requiresCourseToday && !todayHasCourse(c.requiresCourseToday)) return false;
-  if (c.requiresRunCountMin !== undefined && p.runCount < c.requiresRunCountMin) return false;
   if (c.sanityBelow !== undefined && c.sanityBelow !== null && p.sanity >= c.sanityBelow) return false;
   if (c.staminaBelow !== undefined && c.staminaBelow !== null && p.stamina >= c.staminaBelow) return false;
   if (c.moneyBelow !== undefined && c.moneyBelow !== null && p.money >= c.moneyBelow) return false;
@@ -2193,6 +2247,9 @@ function beginEvent() {
 function optNeedsCourse(opt) {
   return !!(opt.effects && opt.effects.prof && opt.effects.prof.course === 'choose');
 }
+function optProfDelta(opt) {
+  return (opt && opt.effects && opt.effects.prof) ? (opt.effects.prof.delta || 0) : 0;
+}
 
 function chooseOption(idx) {
   const ev = ui.currentEvent;
@@ -2202,7 +2259,7 @@ function chooseOption(idx) {
   if (opt.risky && state.player.sanity >= 40) return;
   if (opt.effects && opt.effects.leaveCount < 0 && state.player.leaveCount <= 0) return;
   ui.pendingOption = opt;
-  if (optNeedsCourse(opt) && hasProfRoom()) {
+  if (optNeedsCourse(opt) && (optProfDelta(opt) <= 0 || hasProfRoom())) {
     ui.phase = 'chooseCourse';
     renderAll();
     return;
@@ -2249,7 +2306,7 @@ function chooseLowSanity(kind) {
   }
   if (!opt) return;
   ui.pendingOption = opt;
-  if (optNeedsCourse(opt) && hasProfRoom()) {
+  if (optNeedsCourse(opt) && (optProfDelta(opt) <= 0 || hasProfRoom())) {
     ui.phase = 'chooseCourse';
     renderAll();
     return;
@@ -2392,7 +2449,7 @@ function doFreeAction(kind, courseId) {
     p.runCount++;
     d.runToday++;
     d.freeSlotsLeft--;
-    pushLog('校园跑 1 次：体力 -8，理智 +3，累计 ' + p.runCount + ' / 50。');
+    pushLog('校园跑 1 次：体力 -8，理智 +3，累计 ' + p.runCount + ' / 30。');
   } else if (kind === 'work') {
     p.stamina = clamp(p.stamina - 10, 0, 100);
     p.sanity = clamp(p.sanity - 4, 0, 100);
@@ -3137,18 +3194,22 @@ function renderEventResult(c) {
 }
 
 function renderChooseCourse(c) {
+  const delta = optProfDelta(ui.pendingOption);
+  const isGain = delta > 0;
   let btns = '';
   MAJOR_IDS.forEach(function (id) {
     const prof = Math.round(state.courses[id].prof);
     const full = state.courses[id].prof >= 100;
-    btns += '<button class="btn" ' + (full ? 'disabled' : '') +
+    const disabled = full && isGain;
+    btns += '<button class="btn" ' + (disabled ? 'disabled' : '') +
       ' onclick="chooseCourseFor(\'' + id + '\')">' + state.courses[id].name +
-      '（熟练 ' + prof + (full ? '，已满' : '') + '）</button>';
+      '（熟练 ' + prof + (disabled ? '，已满' : '') + '）</button>';
   });
   c.innerHTML =
     '<div class="panel">' +
     '<h2>选择复习 / 受益的课程</h2>' +
-    '<p class="dim" style="font-size:12px">该事件效果作用于你选择的一门专业课。满 100 的课程不可再获得熟练度。</p>' +
+    '<p class="dim" style="font-size:12px">该事件效果作用于你选择的一门专业课。' +
+    (isGain ? '满 100 的课程不可再获得熟练度。' : '本次效果为扣减熟练度，满 100 的课程也可选择。') + '</p>' +
     '<div class="action-row">' + btns + '</div>' +
     '<div class="action-row"><button class="btn" onclick="cancelPendingOption()">返回，选择其他选项</button></div>' +
     '</div>';
@@ -3254,7 +3315,7 @@ function renderFreeTime(c) {
     '<h3>行动 · 锻炼</h3>' +
     '<div class="action-row">' +
     '<button class="btn small" ' + (noSlots || d.runToday >= 1 ? 'disabled' : '') +
-    ' onclick="doFreeAction(\'run\')">🏃 校园跑 -8体 +3智（' + p.runCount + '/50）' + (d.runToday >= 1 ? '（今日已跑）' : '') + '</button>' +
+    ' onclick="doFreeAction(\'run\')">🏃 校园跑 -8体 +3智（' + p.runCount + '/30）' + (d.runToday >= 1 ? '（今日已跑）' : '') + '</button>' +
     '</div>' +
     '<h3>行动 · 赚钱</h3>' +
     '<div class="action-row">' +
@@ -3448,6 +3509,7 @@ function itemEffectWasted(it) {
   if (it.type === 'health') return p.health >= 100;
   if (it.type === 'sanity') return p.sanity >= 100;
   if (it.type === 'leave') return p.leaveCount >= 5;
+  if (it.type === 'prof') return MAJOR_IDS.every(function (id) { return (state.courses[id].prof || 0) >= 100; });
   return false;
 }
 function confirmUseItem(i) {
@@ -3547,8 +3609,9 @@ function renderShop(c) {
     const limit = SHOP_WEEK_LIMIT[id] || 1;
     const soldOut = bought >= limit;
     const noMoney = p.money < it.price;
-    const disabled = soldOut || noMoney || bagFull;
-    const label = soldOut ? '已购满' : (bagFull ? '背包已满' : (noMoney ? '余额不足' : '购买'));
+    const wasted = itemEffectWasted(it);
+    const disabled = soldOut || noMoney || bagFull || wasted;
+    const label = soldOut ? '已购满' : (bagFull ? '背包已满' : (noMoney ? '余额不足' : (wasted ? '数值已满' : '购买')));
     cards += '<div class="shop-card">' +
       '<div class="shop-icon">' + it.icon + '</div>' +
       '<div class="shop-name">' + it.name + '</div>' +
@@ -3572,6 +3635,7 @@ function buyItem(id) {
   if (!it) return;
   if (state.inventory.length >= BAG_CAP) { pushLog('背包已满，无法购买。'); renderAll(); return; }
   if (p.money < it.price) { pushLog('余额不足，无法购买。'); renderAll(); return; }
+  if (itemEffectWasted(it)) { pushLog('当前数值已满，购买无意义。'); renderAll(); return; }
   const bought = state.shopBought[id] || 0;
   if (bought >= (SHOP_WEEK_LIMIT[id] || 1)) return;
   p.money -= it.price;
@@ -3612,7 +3676,7 @@ function renderWeekly(c) {
     '周末补觉 ' + (r.sleep ? '<span class="green">+8 生命</span>' : '<span class="dim">当周有熬夜/通宵，未触发</span>') + '<br>' +
     '当前余额 <span class="gold">¥' + r.balance + '</span>' +
     '</div>' +
-    '<p class="hint">校园跑累计 ' + state.player.runCount + ' / 50 · 请假剩余 ' + state.player.leaveCount + ' 次</p>' +
+    '<p class="hint">校园跑累计 ' + state.player.runCount + ' / 30 · 请假剩余 ' + state.player.leaveCount + ' 次</p>' +
     '<div class="save-point">' +
     '<div class="save-q">💾 本周已结束，是否保存存档点？</div>' +
     '<div class="action-row">' +
