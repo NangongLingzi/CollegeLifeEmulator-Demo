@@ -413,6 +413,11 @@ const COURSE_DEFS = {
   startup:  { name: '大学生创业指导', short: '创业',    type: 'public', weeklySlots: 1 },
   pe:       { name: '体育',          short: '体育',    type: 'public', weeklySlots: 1 }
 };
+/* 创业新星门槛：正常求稳终局金钱 473–953（中位 687 / p75 755 / p90 915），
+   加入社团并顺路接单后中位约 723 / p75 约 870。取 800 落在两者之间：
+   要「加社团 + 接几次单 + 不乱花」才够，但不逼玩家专门刷钱；
+   专门刷钱策略实测 2168+，仍远高于门槛 */
+const STARTUP_MONEY_REQ = 800;
 const MAJOR_IDS = ['java', 'web', 'db', 'android'];
 const PUBLIC_IDS = ['politics', 'startup', 'pe'];
 const ALL_IDS = Object.keys(COURSE_DEFS);
@@ -638,7 +643,8 @@ let EVENTS = [
   EV('E03', '食堂新开窗口', 'life', 60, {}, '三食堂新开了家麻辣香锅，排队排到楼梯口。', [
     OPT('排队吃', { money: -25, health: 8, sanity: 3, stamina: -3 }, '辣得冒汗，心情莫名变好。'),
     OPT('算了吃老窗口', { money: -12 }, '省了钱，也省了时间。'),
-    OPT('直接回宿舍泡面', { money: -5, health: -3 }, '泡面吃多了，胃有点烧。')
+    OPT('直接回宿舍泡面', { money: -5, health: -3 }, '泡面吃多了，胃有点烧。'),
+    OPT('回宿舍喝热水垫垫', { stamina: -3, sanity: -3 }, '没舍得花钱，饿着肚子躺了一中午。')
   ]),
   EV('E04', '快递堆成山', 'life', 55, {}, '驿站发来消息：您有 5 个包裹已滞留 3 天，请尽快取件。', [
     OPT('现在去取', { stamina: -5, money: -10 }, '扛着五个箱子爬了四层楼。'),
@@ -791,7 +797,8 @@ let EVENTS = [
   EV('E32', '图书馆借书逾期', 'life', 45, { minWeek: 2 }, '图书馆邮件：三本书逾期一周，每本每天一毛，合计 2 元。', [
     OPT('自己去还', { stamina: -5, money: -2 }, '交完罚款，一身轻松。'),
     OPT('请室友顺路还', { sanity: -2, money: -2 }, '室友帮你还了，欠个人情。'),
-    OPT('拖着不管', { money: -5, sanity: -5 }, '又拖了一周，罚款翻倍，心在滴血。')
+    OPT('拖着不管', { money: -5, sanity: -5 }, '又拖了一周，罚款翻倍，心在滴血。'),
+    OPT('去图书馆求情', { sanity: -4 }, '被管理员训了几句，好在没罚款。')
   ]),
   EV('E33', '查寝大扫除', 'life', 50, { minWeek: 3 }, '辅导员通知明天查寝，宿舍要整理干净。', [
     OPT('认真大扫除', { stamina: -10, sanity: 5 }, '地板亮得能照镜子。'),
@@ -1005,18 +1012,18 @@ let EVENTS = [
 
   /* ---- 6.4.11 连锁：学科竞赛线（报名 → 集训 → 初赛 → 决赛） ---- */
   EV('E73', '学科竞赛报名', 'course', 60, { minWeek: 2, anyProfMin: 55 }, '学院要选拔学生参加学科竞赛，辅导员在群里发了报名表。', [
-    OPT('报名参赛', { stamina: -2, sanity: 3, flag: { compJoined: true } }, '你填了报名表，有点小期待。'),
+    OPT('报名参赛', { stamina: -2, sanity: 3, flag: { compJoined: true } }, '你填了报名表，有点小期待。集训从第 3 周开始。'),
     OPT('先观望', { sanity: 1 }, '报名表静静躺在群文件里。'),
     OPT('不感兴趣', { sanity: 2 }, '你觉得还是先把课上好。')
   ]),
   EV('E74', '竞赛集训', 'course', 60, { flagRequired: 'compJoined', minWeek: 3 }, '竞赛集训开始了，每周三晚上在机房，教练盯得很紧。', [
-    OPT('认真参加', { stamina: -8, sanity: -2, prof: { course: 'choose', delta: 6 }, flag: { compTrained: true } }, '集训很累，但你感觉自己变强了。'),
+    OPT('认真参加', { stamina: -8, sanity: -2, prof: { course: 'choose', delta: 6 }, flag: { compTrained: true } }, '集训很累，但你感觉自己变强了。初赛从第 5 周开始，需要任意专业课 ≥65。'),
     OPT('去一次就溜', { sanity: -2, prof: { course: 'choose', delta: 2 } }, '第二次你就没去了。'),
     OPT('退赛', { sanity: 2 }, '你退出了竞赛队。')
   ]),
   EV('E75', '竞赛初赛', 'course', 60, { flagRequired: 'compTrained', minWeek: 5, anyProfMin: 65 }, '初赛的题目比想象中难，你面前只剩最后一道大题。', [
-    OPT('死磕最后一题', { stamina: -10, sanity: -4, prof: { course: 'choose', delta: 5 }, flag: { compFinal: true } }, '你写满了答题纸，居然做出来了。'),
-    OPT('先保住前面的分', { stamina: -4, sanity: 2, flag: { compFinal: true } }, '你仔细检查了三遍，顺利晋级。'),
+    OPT('死磕最后一题', { stamina: -10, sanity: -4, prof: { course: 'choose', delta: 5 }, flag: { compFinal: true } }, '你写满了答题纸，居然做出来了。决赛从第 7 周开始，需要任意专业课 ≥80。'),
+    OPT('先保住前面的分', { stamina: -4, sanity: 2, flag: { compFinal: true } }, '你仔细检查了三遍，顺利晋级。决赛从第 7 周开始，需要任意专业课 ≥80。'),
     OPT('提前交卷', { sanity: 3 }, '你觉得没戏了，早早离场。')
   ]),
   EV('E76', '竞赛决赛', 'course', 60, { flagRequired: 'compFinal', minWeek: 7, anyProfMin: 80 }, '决赛现场，评委就在台下，你的手有点抖。', [
@@ -1025,6 +1032,12 @@ let EVENTS = [
     OPT('临场怯场', { sanity: -8, stamina: -5 }, '你脑子一片空白，草草收场。')
   ])
 ];
+
+/* 连锁事件标记：满足前置条件后优先触发（普通池共 76 个事件、总权重 3625，权重 60 极易被淹没） */
+['E73', 'E74', 'E75', 'E76'].forEach(function (id) {
+  const ev = getEventById(id);
+  if (ev) ev.chain = true;
+});
 
 /* ========= 课间事件池（仅在两节课之间触发，不进日常事件池） ========= */
 let CLASS_EVENTS = [
@@ -1213,6 +1226,7 @@ function createState(seed) {
       highIntensityDays: 0,
       gameCountThisWeek: 0,
       proxyCountThisWeek: 0,
+      clubWorkCountThisWeek: 0,
       studyKitThisWeek: true,
       isCollapsed: false,
       maxStaminaNextDay: 0,
@@ -1309,6 +1323,7 @@ function initRuntime() {
   if (p.gameCountThisWeek === undefined) p.gameCountThisWeek = 0;
   if (p.gameProf === undefined) p.gameProf = 0;
   if (p.proxyCountThisWeek === undefined) p.proxyCountThisWeek = 0;
+  if (p.clubWorkCountThisWeek === undefined) p.clubWorkCountThisWeek = 0;
   if (state.weekly.gameProfGain === undefined) state.weekly.gameProfGain = 0;
   if (!state.schedule || !state.schedule.grid) {
     state.schedule = { grid: {} };
@@ -2066,12 +2081,16 @@ function startToday() {
   const todayKey = t.week + '-' + t.dayOfWeek;
   if (state.day && state.day.started && state.day.dateKey === todayKey) {
     /* 读档重开当天：不重置进度，从残留状态继续，避免刷课/刷课间事件 */
-    if (!state.day.classesFinished) {
-      ui.phase = 'classSession';
-      pushLog('读档恢复：从当天剩余课程继续。');
-    } else {
+    /* 临时 UI 数据不写入存档，读档后可能缺失，先补空数组避免后续 push 报错 */
+    if (!Array.isArray(ui.classResults)) ui.classResults = [];
+    if (!Array.isArray(ui.eventQueue)) ui.eventQueue = [];
+    if (t.week === 10 || state.day.classesFinished) {
+      /* 补考周没有课程，不能恢复到空的 classSession */
       ui.phase = 'freeTime';
       pushLog('读档恢复：从当天自由时间继续。');
+    } else {
+      ui.phase = 'classSession';
+      pushLog('读档恢复：从当天剩余课程继续。');
     }
     renderAll();
     return;
@@ -2178,9 +2197,19 @@ function rollEvent() {
   if (!EVENTS.length) return null;
   const es = state.eventState;
   const turn = state.meta.turnIndex;
+  /* 连锁事件优先：满足条件即触发一次，避免被 76 个普通事件按权重淹没 */
+  for (let i = 0; i < EVENTS.length; i++) {
+    const cev = EVENTS[i];
+    if (!cev.chain) continue;
+    if (!conditionOk(cev)) continue;
+    if (es.lastTrigger[cev.id] !== undefined) continue;
+    es.lastTrigger[cev.id] = turn;
+    return cev;
+  }
   const pool = [];
   let total = 0;
   EVENTS.forEach(function (ev) {
+    if (ev.chain) return;
     if (!ev.weight || ev.weight <= 0) return;
     if (!conditionOk(ev)) return;
     const last = es.lastTrigger[ev.id];
@@ -2265,6 +2294,19 @@ function optProfDelta(opt) {
   return (opt && opt.effects && opt.effects.prof) ? (opt.effects.prof.delta || 0) : 0;
 }
 
+/* 选项可能造成的最大金钱支出：基础付费 + 概率失败扣款（replace 时按替换后的净额算） */
+function optionMoneyCost(opt) {
+  if (!opt) return 0;
+  const base = (opt.effects && opt.effects.money) || 0;
+  let cost = base < 0 ? -base : 0;
+  if (opt.chance && opt.chance.failEffects) {
+    const fail = opt.chance.failEffects.money || 0;
+    const total = opt.chance.replace ? fail : base + fail;
+    if (total < 0) cost = Math.max(cost, -total);
+  }
+  return cost;
+}
+
 function chooseOption(idx) {
   const ev = ui.currentEvent;
   if (!ev) return;
@@ -2272,6 +2314,8 @@ function chooseOption(idx) {
   if (!opt) return;
   if (opt.risky && state.player.sanity >= 40) return;
   if (opt.effects && opt.effects.leaveCount < 0 && state.player.leaveCount <= 0) return;
+  /* 余额不足的付费选项不允许结算（含概率失败扣款；renderEvent 已置灰，这里兜底防止其它入口绕过） */
+  if (optionMoneyCost(opt) > state.player.money) return;
   ui.pendingOption = opt;
   if (optNeedsCourse(opt) && (optProfDelta(opt) <= 0 || hasProfRoom())) {
     ui.phase = 'chooseCourse';
@@ -2471,6 +2515,16 @@ function doFreeAction(kind, courseId) {
     state.runStats.workIncome = (state.runStats.workIncome || 0) + 50;
     d.freeSlotsLeft--;
     pushLog('兼职 1 格：¥+50，体力 -10，理智 -4。');
+  } else if (kind === 'clubWork') {
+    /* 社团专属接单：用体力/理智换钱，每周上限 2 次（创业路线专用收入） */
+    if (!state.flags.clubJoined) return;
+    if ((p.clubWorkCountThisWeek || 0) >= 2) return;
+    p.stamina = clamp(p.stamina - 12, 0, 100);
+    p.sanity = clamp(p.sanity - 6, 0, 100);
+    p.money += 70;
+    p.clubWorkCountThisWeek = (p.clubWorkCountThisWeek || 0) + 1;
+    d.freeSlotsLeft--;
+    pushLog('社团接单 1 格：¥+70，体力 -12，理智 -6（本周第 ' + p.clubWorkCountThisWeek + ' / 2 次）。');
   } else if (kind === 'social') {
     if (state.time.week < 5 || p.money < 15) return;
     p.stamina = clamp(p.stamina - 4, 0, 100);
@@ -2731,6 +2785,7 @@ function settleWeek() {
   }
   p.gameCountThisWeek = 0;
   p.proxyCountThisWeek = 0;
+  p.clubWorkCountThisWeek = 0;
   p.highIntensityDays = 0;
   w.hadLateNight = false;
   w.gameProfGain = 0;
@@ -2763,8 +2818,9 @@ function continueWeekly() {
   const w = state.time.week;
   if (w <= 9 && !state.schedule.grid[w]) state.schedule.grid[w] = generateGrid();
   pushLog('第 ' + w + ' 周：系统随机生成本周课表。');
-  saveGame();
+  /* 先切阶段再存档，否则读档会停在 weekly 并再次执行本函数（整周被跳过） */
   ui.phase = 'schedule';
+  saveGame();
   renderAll();
 }
 
@@ -2819,12 +2875,14 @@ function gradeRank(g) {
 }
 
 function checkSpecialEnding(rating, info) {
+  /* 仅 D（生命归零）/ F（补考仍挂）不触发特殊结局；
+     C（补考通过）不再屏蔽，特殊结局达成时优先于普通评级展示 */
   if (rating === 'D' || rating === 'F') return null;
   const p = state.player;
   const all100 = MAJOR_IDS.every(function (id) { return (state.courses[id].prof || 0) >= 100; });
   if (rating === 'S' && all100 && p.health >= 60) return { id: 'baoyan', name: '保研之路', rarity: '传说' };
   if (state.flags.compWinner) return { id: 'champion', name: '竞赛冠军', rarity: '史诗' };
-  if (state.flags.clubJoined && p.money >= 2000) return { id: 'startup', name: '创业新星', rarity: '史诗' };
+  if (state.flags.clubJoined && p.money >= STARTUP_MONEY_REQ) return { id: 'startup', name: '创业新星', rarity: '史诗' };
   if ((p.gameProf || 0) >= 100) return { id: 'esports', name: '电竞选手', rarity: '史诗' };
   if ((state.stats.collapseCount || 0) >= 3) return { id: 'phoenix', name: '不死鸟', rarity: '稀有' };
   return null;
@@ -2959,6 +3017,7 @@ function startRetakeWeek() {
   p.studyKitThisWeek = true;
   p.gameCountThisWeek = 0;
   p.proxyCountThisWeek = 0;
+  p.clubWorkCountThisWeek = 0;
   p.highIntensityDays = 0;
   state.weekly.hadLateNight = false;
   state.weekly.mealStreak = 0;
@@ -3143,9 +3202,13 @@ function renderEvent(c) {
     if (o.risky && state.player.sanity >= 40) return;
     const risky = o.risky ? '<span class="red">[高风险] </span>' : '';
     const noLeave = !!(o.effects && o.effects.leaveCount < 0 && state.player.leaveCount <= 0);
+    const cost = optionMoneyCost(o);
+    const poor = cost > state.player.money;
+    const note = noLeave ? '（请假次数已用完）' :
+      (poor ? '（余额不足：需 ¥' + cost + '，当前 ¥' + state.player.money + '）' : '');
     opts += '<div style="margin-top:8px">' +
-      '<button class="btn opt" ' + (noLeave ? 'disabled' : '') + ' onclick="chooseOption(' + i + ')">' +
-      '<span class="opt-title">' + risky + o.text + (noLeave ? '（请假次数已用完）' : '') + '</span>' +
+      '<button class="btn opt" ' + (noLeave || poor ? 'disabled' : '') + ' onclick="chooseOption(' + i + ')">' +
+      '<span class="opt-title">' + risky + o.text + note + '</span>' +
       '<span class="opt-eff">' + effectSummary(o.effects) +
       (o.chance ? ' · 有概率失败' : '') + '</span>' +
       '</button></div>';
@@ -3336,6 +3399,10 @@ function renderFreeTime(c) {
     '<button class="btn small" ' + dis + ' onclick="doFreeAction(\'work\')">💼 兼职 +¥50 -10体 -4智</button>' +
     '<button class="btn small" ' + (noSlots || p.gameProf < 70 || (p.proxyCountThisWeek || 0) >= 2 ? 'disabled' : '') +
     ' onclick="doFreeAction(\'boost\')">⚡ 代练 +¥45 -12体 -3智' + boostNote + '</button>' +
+    (state.flags.clubJoined ?
+      '<button class="btn small" ' + (noSlots || (p.clubWorkCountThisWeek || 0) >= 2 ? 'disabled' : '') +
+      ' onclick="doFreeAction(\'clubWork\')">🧾 社团接单 +¥70 -12体 -6智（' +
+      (p.clubWorkCountThisWeek || 0) + '/2' + ((p.clubWorkCountThisWeek || 0) >= 2 ? '，本周已达上限' : '') + '）</button>' : '') +
     '</div>' +
     '<h3>行动 · 社交娱乐</h3>' +
     '<div class="action-row">' +
@@ -3349,6 +3416,7 @@ function renderFreeTime(c) {
     '</div>' +
     '<details class="rules"><summary>？规则说明</summary><p class="hint">规则：同门课每天最多复习 2 格；当天翘掉的课当天不能复习；单门课每周熟练度总收益上限 +16；校园跑每天最多 1 次。' +
     '游戏熟练每周最多 +18（周一重置），开黑需 40，代练需 70。' +
+    '社团接单需已加入社团，每周最多 2 次。' +
     (t.week === 10 ? '补考周复习收益：第 1/2/3/4 天分别为 +6/+4/+2/+1。' : '') + '</p></details>' +
     '<div class="action-row"><button class="btn gold" onclick="enterMeals()">结束自由时间 → 餐饮</button></div>' +
     '</div>';
@@ -3808,11 +3876,15 @@ function renderEnding(c) {
         '<div class="c">' + state.courses[id].name + ' <span class="' + (s >= 60 ? 'green' : 'red') + '">' + s + ' 分</span></div></div>';
     });
   }
+  const isSpecial = !!e.rarity;
   c.innerHTML =
     '<div class="panel" style="text-align:center">' +
-    (e.rarity ? '<div style="font-size:13px;color:var(--purple);letter-spacing:2px;margin-top:10px">【' + e.rarity + '结局】</div>' : '') +
-    '<div style="font-size:40px;color:var(--gold);text-shadow:4px 4px 0 #000;margin:10px 0">' + e.rating + '</div>' +
-    '<h2 style="border-bottom:none">' + e.reason + '</h2>' +
+    (isSpecial
+      ? '<div style="font-size:13px;color:var(--purple);letter-spacing:2px;margin-top:10px">【' + e.rarity + '结局】</div>' +
+        '<div style="font-size:30px;color:var(--gold);text-shadow:4px 4px 0 #000;margin:10px 0">' + e.reason + '</div>' +
+        '<div style="font-size:13px;color:var(--dim);margin-bottom:10px">基础评级 ' + e.rating + '</div>'
+      : '<div style="font-size:40px;color:var(--gold);text-shadow:4px 4px 0 #000;margin:10px 0">' + e.rating + '</div>' +
+        '<h2 style="border-bottom:none">' + e.reason + '</h2>') +
     '<div class="validate" style="justify-content:center">' +
     '<span>撑过 ' + e.days + ' 天</span>' +
     (info.avg !== undefined ? '<span>平均 ' + info.avg + ' 分</span>' : '') +
@@ -3900,7 +3972,9 @@ function continueGame() {
   if (ui.phase === 'dayEnd' && !ui.daySummary) ui.phase = 'dayStart';
   const ex = state.exam || {};
   if (ex.enteredRetake) {
-    ui.phase = ex.retakeTaken ? 'retakeResult' : 'dayStart';
+    /* 补考周不强制回 dayStart：保留可恢复阶段，避免读档后落入空的 classSession */
+    if (ex.retakeTaken) ui.phase = 'retakeResult';
+    else if (ui.phase === 'retakeResult' || restorable.indexOf(savedPhase) < 0) ui.phase = 'dayStart';
   } else if (ex.pending && !ex.taken) {
     ui.phase = 'exam';
   } else if (ex.taken) {
